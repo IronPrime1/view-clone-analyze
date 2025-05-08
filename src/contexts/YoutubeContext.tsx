@@ -1,7 +1,7 @@
 
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { supabase } from '../integrations/supabase/client';
-import { toast } from '../components/ui/sonner';
+import { toast } from 'sonner';
 
 // Define types
 interface Video {
@@ -169,7 +169,7 @@ export const YoutubeProvider: React.FC<{children: React.ReactNode}> = ({ childre
         .single();
       
       if (profile?.youtube_connected) {
-        await loadOwnChannel();
+        await loadOwnChannel(profile);
       }
       
       // Load competitor channels
@@ -189,45 +189,35 @@ export const YoutubeProvider: React.FC<{children: React.ReactNode}> = ({ childre
     }
   };
   
-  // Load the user's own YouTube channel data
-  const loadOwnChannel = async () => {
+  // Load the user's own YouTube channel data from their profile
+  const loadOwnChannel = async (profile: any) => {
     try {
-      // In a real app, we'll use real API data
-      // For now, we'll still use mock data but pretend it's coming from the API
-      const mockChannel: Channel = {
-        id: "your-channel-id",
-        title: "Your YouTube Channel",
-        subscriberCount: 5480,
-        viewCount: 286400,
-        videoCount: 42,
-        thumbnail: "https://i.pravatar.cc/150?u=yourChannel",
-        videos: [
-          {
-            id: "video1",
-            title: "How to Grow Your Channel",
-            description: "Tips and tricks for growing your YouTube channel",
-            publishedAt: new Date().toISOString(),
-            thumbnail: "https://picsum.photos/id/1/640/360",
-            viewCount: 1500,
-            likeCount: 120,
-            commentCount: 45,
-            isShort: false
-          },
-          {
-            id: "video2",
-            title: "Quick Editing Tips",
-            description: "Fast video editing techniques",
-            publishedAt: new Date().toISOString(),
-            thumbnail: "https://picsum.photos/id/2/640/360",
-            viewCount: 2500,
-            likeCount: 230,
-            commentCount: 28,
-            isShort: true
+      if (profile.youtube_channel_id) {
+        const channel: Channel = {
+          id: profile.youtube_channel_id,
+          title: profile.youtube_channel_title || "Your Channel",
+          subscriberCount: profile.youtube_subscriber_count || 0,
+          viewCount: profile.youtube_view_count || 0,
+          videoCount: profile.youtube_video_count || 0,
+          thumbnail: profile.youtube_channel_thumbnail || "https://via.placeholder.com/48",
+        };
+        
+        // Fetch videos if needed
+        if (!channel.videos) {
+          const { data, error } = await supabase.functions.invoke('youtube-fetch', {
+            body: {
+              channelId: channel.id,
+              action: 'get_channel_data'
+            }
+          });
+          
+          if (!error && data?.channel?.videos) {
+            channel.videos = data.channel.videos;
           }
-        ]
-      };
-      
-      setOwnChannel(mockChannel);
+        }
+        
+        setOwnChannel(channel);
+      }
     } catch (error) {
       console.error("Error loading own channel:", error);
       toast.error("Failed to load your YouTube channel data");
@@ -351,14 +341,35 @@ export const YoutubeProvider: React.FC<{children: React.ReactNode}> = ({ childre
     setIsLoading(true);
     
     try {
-      // For a real app, we'd implement a proper OAuth flow
-      // For now, we'll simulate success with better toast messages
+      // Google OAuth URL setup
+      const clientId = "YOUR_CLIENT_ID"; // This would be replaced with your real client ID
+      const redirectUri = `${window.location.origin}/auth`;
+      const scope = "https://www.googleapis.com/auth/youtube.readonly";
+      const responseType = "code";
+      const accessType = "offline";
+      const prompt = "consent";
+      
+      // Build authorization URL
+      const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scope)}&response_type=${responseType}&access_type=${accessType}&prompt=${prompt}`;
+      
+      // For now, we'll simulate success with toast messages since we don't have a working OAuth flow
       toast.info("Connecting to YouTube...");
+      
+      // In a real app, we'd redirect to Google's OAuth page
+      // window.location.href = authUrl;
       
       // Simulate successful YouTube auth
       setTimeout(() => {
         setIsAuthenticated(true);
-        loadOwnChannel();
+        loadOwnChannel({
+          youtube_connected: true,
+          youtube_channel_id: "UC_x5XG1OV2P6uZZ5FSM9Ttw",
+          youtube_channel_title: "Your YouTube Channel",
+          youtube_subscriber_count: 5480,
+          youtube_view_count: 286400,
+          youtube_video_count: 42,
+          youtube_channel_thumbnail: "https://i.pravatar.cc/150?u=yourChannel"
+        });
         toast.success("Successfully connected to YouTube");
         setIsLoading(false);
       }, 1500);

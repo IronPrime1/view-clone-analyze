@@ -124,6 +124,23 @@ async function fetchChannelVideos(channelId: string, apiKey: string, maxResults 
   });
 }
 
+// Helper to fetch popular videos from a channel (by most views)
+async function fetchPopularVideos(channelId: string, apiKey: string) {
+  try {
+    // First get all videos (we'll get 20 to have a good pool to choose from)
+    const allVideos = await fetchChannelVideos(channelId, apiKey, 20);
+    
+    // Sort by view count
+    const sortedVideos = allVideos.sort((a, b) => b.viewCount - a.viewCount);
+    
+    // Take top 10
+    return sortedVideos.slice(0, 10);
+  } catch (error) {
+    console.error("Error fetching popular videos:", error);
+    return [];
+  }
+}
+
 serve(async (req) => {
   // Handle CORS
   const corsResponse = await handleCors(req);
@@ -193,8 +210,8 @@ serve(async (req) => {
           throw new Error(`Failed to add competitor channel: ${competitorError.message}`);
         }
         
-        // Fetch videos for the channel
-        const videos = await fetchChannelVideos(channelId, youtubeApiKey);
+        // Fetch popular videos for the channel
+        const videos = await fetchPopularVideos(channelId, youtubeApiKey);
         
         // Insert videos into database
         if (videos.length > 0) {
@@ -262,7 +279,7 @@ serve(async (req) => {
         const channelData = await fetchChannelData(channelId, youtubeApiKey);
         
         // Fetch videos
-        const videos = await fetchChannelVideos(channelId, youtubeApiKey);
+        const videos = await fetchPopularVideos(channelId, youtubeApiKey);
         
         return new Response(
           JSON.stringify({
