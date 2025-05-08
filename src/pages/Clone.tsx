@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,7 +12,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
 
 const Clone: React.FC = () => {
-  const { competitors, user } = useYoutube();
+  const { competitors } = useYoutube();
   const [selectedCompetitor, setSelectedCompetitor] = useState<string | null>(null);
   const [selectedVideo, setSelectedVideo] = useState<string | null>(null);
   const [userVideoUrl, setUserVideoUrl] = useState('');
@@ -107,10 +108,18 @@ const Clone: React.FC = () => {
     if (!generatedScript || !selectedVideo) return;
     
     try {
+      const { data: userData } = await supabase.auth.getUser();
+      const userId = userData.user?.id;
+      
+      if (!userId) {
+        toast.error("You must be logged in to save scripts");
+        return;
+      }
+      
       const { data, error } = await supabase
         .from('saved_scripts')
         .insert({
-          user_id: supabase.auth.getUser().then(({ data }) => data.user?.id),
+          user_id: userId,
           video_id: selectedVideo,
           content: generatedScript
         })
