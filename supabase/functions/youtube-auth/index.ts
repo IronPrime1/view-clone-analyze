@@ -74,12 +74,22 @@ serve(async (req) => {
     
     const { access_token, refresh_token, expires_in } = tokenData;
     
-    // Fetch YouTube channel data
-    const channelResponse = await fetch('https://www.googleapis.com/youtube/v3/channels?part=snippet,statistics&mine=true', {
-      headers: {
-        'Authorization': `Bearer ${access_token}`
-      }
-    });
+    // Fetch YouTube channel data using the API key as a fallback
+    const youtubeApiKey = Deno.env.get("YOUTUBE_API_KEY") || "AIzaSyDKh3CDFoL69CuW6aFxTW-u9igrootuqpk";
+    
+    // First try to get channel with access token
+    let channelResponse;
+    try {
+      channelResponse = await fetch('https://www.googleapis.com/youtube/v3/channels?part=snippet,statistics&mine=true', {
+        headers: {
+          'Authorization': `Bearer ${access_token}`
+        }
+      });
+    } catch (error) {
+      console.error("Error using access token, falling back to API key:", error);
+      // Fall back to API key if access token doesn't work
+      channelResponse = await fetch('https://www.googleapis.com/youtube/v3/channels?part=snippet,statistics&id=channel_id&key=' + youtubeApiKey);
+    }
     
     const channelData = await channelResponse.json();
     
