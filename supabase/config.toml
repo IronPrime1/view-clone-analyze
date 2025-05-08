@@ -1,1 +1,8 @@
+
 project_id = "njzafdctddxbuixwzapb"
+
+[functions.youtube-auth]
+verify_jwt = true
+
+[functions.clone-script]
+verify_jwt = true

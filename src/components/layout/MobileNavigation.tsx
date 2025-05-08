@@ -9,7 +9,7 @@ const MobileNavigation: React.FC = () => {
       <NavLink 
         to="/" 
         className={({ isActive }) => 
-          `flex flex-col items-center p-2 ${
+          `flex flex-col items-center py-3 px-2 ${
             isActive ? 'text-primary' : 'text-muted-foreground'
           }`
         }
@@ -22,7 +22,7 @@ const MobileNavigation: React.FC = () => {
       <NavLink 
         to="/competitors" 
         className={({ isActive }) => 
-          `flex flex-col items-center p-2 ${
+          `flex flex-col items-center py-3 px-2 ${
             isActive ? 'text-primary' : 'text-muted-foreground'
           }`
         }
@@ -34,7 +34,7 @@ const MobileNavigation: React.FC = () => {
       <NavLink 
         to="/clone" 
         className={({ isActive }) => 
-          `flex flex-col items-center p-2 ${
+          `flex flex-col items-center py-3 px-2 ${
             isActive ? 'text-primary' : 'text-muted-foreground'
           }`
         }
@@ -46,7 +46,7 @@ const MobileNavigation: React.FC = () => {
       <NavLink 
         to="/analyze" 
         className={({ isActive }) => 
-          `flex flex-col items-center p-2 ${
+          `flex flex-col items-center py-3 px-2 ${
             isActive ? 'text-primary' : 'text-muted-foreground'
           }`
         }

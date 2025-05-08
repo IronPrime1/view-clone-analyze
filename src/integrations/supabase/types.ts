@@ -9,7 +9,185 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      competitor_channels: {
+        Row: {
+          created_at: string | null
+          id: string
+          subscriber_count: number | null
+          thumbnail: string | null
+          title: string
+          updated_at: string | null
+          user_id: string
+          video_count: number | null
+          view_count: number | null
+          youtube_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          subscriber_count?: number | null
+          thumbnail?: string | null
+          title: string
+          updated_at?: string | null
+          user_id: string
+          video_count?: number | null
+          view_count?: number | null
+          youtube_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          subscriber_count?: number | null
+          thumbnail?: string | null
+          title?: string
+          updated_at?: string | null
+          user_id?: string
+          video_count?: number | null
+          view_count?: number | null
+          youtube_id?: string
+        }
+        Relationships: []
+      }
+      competitor_videos: {
+        Row: {
+          channel_id: string
+          comment_count: number | null
+          created_at: string | null
+          description: string | null
+          id: string
+          is_short: boolean | null
+          like_count: number | null
+          published_at: string | null
+          thumbnail: string | null
+          title: string
+          updated_at: string | null
+          view_count: number | null
+          youtube_id: string
+        }
+        Insert: {
+          channel_id: string
+          comment_count?: number | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_short?: boolean | null
+          like_count?: number | null
+          published_at?: string | null
+          thumbnail?: string | null
+          title: string
+          updated_at?: string | null
+          view_count?: number | null
+          youtube_id: string
+        }
+        Update: {
+          channel_id?: string
+          comment_count?: number | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_short?: boolean | null
+          like_count?: number | null
+          published_at?: string | null
+          thumbnail?: string | null
+          title?: string
+          updated_at?: string | null
+          view_count?: number | null
+          youtube_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "competitor_videos_channel_id_fkey"
+            columns: ["channel_id"]
+            isOneToOne: false
+            referencedRelation: "competitor_channels"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      daily_views: {
+        Row: {
+          channel_id: string
+          created_at: string | null
+          date: string
+          id: string
+          updated_at: string | null
+          user_id: string
+          views: number
+        }
+        Insert: {
+          channel_id: string
+          created_at?: string | null
+          date: string
+          id?: string
+          updated_at?: string | null
+          user_id: string
+          views?: number
+        }
+        Update: {
+          channel_id?: string
+          created_at?: string | null
+          date?: string
+          id?: string
+          updated_at?: string | null
+          user_id?: string
+          views?: number
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string | null
+          id: string
+          updated_at: string | null
+          youtube_connected: boolean | null
+          youtube_refresh_token: string | null
+          youtube_token: string | null
+          youtube_token_expiry: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id: string
+          updated_at?: string | null
+          youtube_connected?: boolean | null
+          youtube_refresh_token?: string | null
+          youtube_token?: string | null
+          youtube_token_expiry?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          updated_at?: string | null
+          youtube_connected?: boolean | null
+          youtube_refresh_token?: string | null
+          youtube_token?: string | null
+          youtube_token_expiry?: string | null
+        }
+        Relationships: []
+      }
+      saved_scripts: {
+        Row: {
+          content: string
+          created_at: string | null
+          id: string
+          user_id: string
+          video_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          id?: string
+          user_id: string
+          video_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          id?: string
+          user_id?: string
+          video_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
