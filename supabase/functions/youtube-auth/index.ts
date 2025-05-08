@@ -1,130 +1,168 @@
 
-import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
+import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.4.0";
 
-// In a production app, you would use real OAuth and API calls
-// This is a simplified mock version for the prototype
-
+// Set up CORS headers
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-serve(async (req) => {
-  // Handle CORS preflight requests
+// Handle CORS preflight requests
+async function handleCors(req: Request) {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
+  return null;
+}
+
+// Define the YouTube API handler
+serve(async (req) => {
+  // Handle CORS
+  const corsResponse = await handleCors(req);
+  if (corsResponse) return corsResponse;
 
   try {
-    const url = new URL(req.url);
-    const path = url.pathname.split('/').pop();
+    // Parse the request body
+    const { code, redirectUri } = await req.json();
     
-    if (path === 'connect') {
-      // Handle OAuth connection
-      
-      // In a real app, this would handle a real OAuth flow
-      // For now, return a mock response
-      const mockResponse = {
-        success: true,
-        channelInfo: {
-          id: "your-channel-id",
-          title: "Your YouTube Channel",
-          subscriberCount: 5480,
-          viewCount: 286400,
-          videoCount: 42,
-          thumbnail: "https://i.pravatar.cc/150?u=yourChannel"
-        },
-        accessToken: "mock-access-token",
-        refreshToken: "mock-refresh-token",
-        expiresAt: new Date(Date.now() + 3600000).toISOString()
-      };
-      
-      return new Response(JSON.stringify(mockResponse), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200,
-      });
-    } 
-    else if (path === 'analytics') {
-      // Get YouTube analytics data
-      const mockDailyViews = Array.from({length: 7}, (_, i) => {
-        const date = new Date();
-        date.setDate(date.getDate() - (6 - i));
-        return {
-          date: date.toISOString().split('T')[0],
-          views: Math.floor(Math.random() * 1000) + 500
-        };
-      });
-      
-      return new Response(JSON.stringify({ dailyViews: mockDailyViews }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200,
-      });
-    }
-    else if (path === 'channel') {
-      // Get channel info
-      const { channel } = await req.json();
-      
-      // In a real app, we'd call the YouTube API
-      const randomId = Math.random().toString(36).substring(2, 15);
-      const randomSubscribers = Math.floor(Math.random() * 9000) + 1000;
-      const randomViews = randomSubscribers * (Math.floor(Math.random() * 50) + 20);
-      const randomVideos = Math.floor(Math.random() * 100) + 10;
-      
-      const mockChannel = {
-        id: randomId,
-        title: channel.includes('/') ? 
-          channel.split('/').pop() || "Competitor Channel" : 
-          channel,
-        subscriberCount: randomSubscribers,
-        viewCount: randomViews,
-        videoCount: randomVideos,
-        thumbnail: `https://i.pravatar.cc/150?u=${randomId}`,
-        videos: Array.from({ length: 10 }, (_, i) => {
-          const isShort = i % 3 === 0; // Every 3rd video is a short
-          const videoId = `v-${Math.random().toString(36).substring(2, 10)}`;
-          const viewCount = isShort ? 
-            Math.floor(Math.random() * 50000) + 10000 : 
-            Math.floor(Math.random() * 10000) + 1000;
-          
-          const daysAgo = Math.floor(Math.random() * 7);
-          const pubDate = new Date();
-          pubDate.setDate(pubDate.getDate() - daysAgo);
-          
-          return {
-            id: videoId,
-            title: isShort ? 
-              `Quick ${i + 1}: How to boost engagement instantly` : 
-              `The complete guide to growing on YouTube - Part ${i + 1}`,
-            description: isShort ? 
-              "Short video tip for quick growth!" : 
-              "In this video, I share my top strategies for growth on YouTube in 2023...",
-            publishedAt: pubDate.toISOString(),
-            thumbnail: `https://picsum.photos/id/${Math.floor(Math.random() * 100)}/640/360`,
-            viewCount: viewCount,
-            likeCount: Math.floor(viewCount * 0.1),
-            commentCount: Math.floor(viewCount * 0.02),
-            isShort: isShort
-          };
-        })
-      };
-      
-      return new Response(JSON.stringify(mockChannel), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200,
-      });
+    // Validate request data
+    if (!code) {
+      return new Response(
+        JSON.stringify({ error: "Authorization code is required" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
     
-    // Default response if no path matches
-    return new Response(JSON.stringify({ error: 'Route not found' }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      status: 404,
+    // Initialize Supabase client using service role key
+    const supabaseAdmin = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+      { auth: { autoRefreshToken: false, persistSession: false } }
+    );
+    
+    // Exchange the authorization code for tokens
+    const clientId = Deno.env.get("YOUTUBE_CLIENT_ID");
+    const clientSecret = Deno.env.get("YOUTUBE_CLIENT_SECRET");
+    
+    const tokenUrl = "https://oauth2.googleapis.com/token";
+    const tokenParams = new URLSearchParams({
+      code,
+      client_id: clientId!,
+      client_secret: clientSecret!,
+      redirect_uri: redirectUri,
+      grant_type: "authorization_code"
     });
+    
+    const tokenResponse = await fetch(tokenUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded"
+      },
+      body: tokenParams.toString()
+    });
+    
+    const tokenData = await tokenResponse.json();
+    
+    if (!tokenResponse.ok) {
+      console.error("YouTube token error:", tokenData);
+      return new Response(
+        JSON.stringify({ error: "Failed to authenticate with YouTube" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    
+    const { access_token, refresh_token, expires_in } = tokenData;
+    
+    // Fetch YouTube channel data
+    const channelResponse = await fetch('https://www.googleapis.com/youtube/v3/channels?part=snippet,statistics&mine=true', {
+      headers: {
+        'Authorization': `Bearer ${access_token}`
+      }
+    });
+    
+    const channelData = await channelResponse.json();
+    
+    if (!channelResponse.ok || !channelData.items || channelData.items.length === 0) {
+      console.error("YouTube channel error:", channelData);
+      return new Response(
+        JSON.stringify({ error: "Failed to fetch YouTube channel data" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    
+    const channel = channelData.items[0];
+    const channelId = channel.id;
+    const channelTitle = channel.snippet.title;
+    const channelThumbnail = channel.snippet.thumbnails.default.url;
+    
+    // Get current user ID from authorization header
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: "Not authenticated" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: userError } = await supabaseAdmin.auth.getUser(token);
+    
+    if (userError || !user) {
+      return new Response(
+        JSON.stringify({ error: "Invalid token" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    
+    // Calculate token expiry time
+    const expiryTime = new Date();
+    expiryTime.setSeconds(expiryTime.getSeconds() + expires_in);
+    
+    // Update user profile with YouTube tokens and data
+    const { error: updateError } = await supabaseAdmin
+      .from('profiles')
+      .update({
+        youtube_connected: true,
+        youtube_token: access_token,
+        youtube_refresh_token: refresh_token,
+        youtube_token_expiry: expiryTime.toISOString()
+      })
+      .eq('id', user.id);
+      
+    if (updateError) {
+      console.error("Profile update error:", updateError);
+      return new Response(
+        JSON.stringify({ error: "Failed to update profile" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    
+    // Return success response
+    return new Response(
+      JSON.stringify({
+        success: true,
+        channel: {
+          id: channelId,
+          title: channelTitle,
+          thumbnail: channelThumbnail
+        }
+      }),
+      { 
+        status: 200, 
+        headers: { ...corsHeaders, "Content-Type": "application/json" }
+      }
+    );
     
   } catch (error) {
-    console.error(error);
-    return new Response(JSON.stringify({ error: error.message }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      status: 500,
-    });
+    console.error("YouTube auth error:", error.message);
+    
+    return new Response(
+      JSON.stringify({ error: error.message }),
+      { 
+        status: 500, 
+        headers: { ...corsHeaders, "Content-Type": "application/json" }
+      }
+    );
   }
 });

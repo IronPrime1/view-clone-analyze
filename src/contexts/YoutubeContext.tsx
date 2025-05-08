@@ -4,15 +4,6 @@ import { supabase } from '../integrations/supabase/client';
 import { toast } from '../components/ui/sonner';
 
 // Define types
-interface Channel {
-  id: string;
-  title: string;
-  subscriberCount: number;
-  viewCount: number;
-  videoCount: number;
-  thumbnail: string;
-}
-
 interface Video {
   id: string;
   title: string;
@@ -23,6 +14,23 @@ interface Video {
   likeCount: number;
   commentCount: number;
   isShort: boolean;
+}
+
+interface SavedScript {
+  id: string;
+  content: string;
+  createdAt: string;
+  videoId: string;
+}
+
+interface Channel {
+  id: string;
+  title: string;
+  subscriberCount: number;
+  viewCount: number;
+  videoCount: number;
+  thumbnail: string;
+  videos?: Video[];
 }
 
 interface DailyViews {
@@ -45,6 +53,7 @@ interface YoutubeContextType {
   addCompetitor: (channelUrl: string) => Promise<void>;
   removeCompetitor: (id: string) => Promise<void>;
   refreshData: () => Promise<void>;
+  getSavedScripts: (videoId: string) => SavedScript[];
 }
 
 const YoutubeContext = createContext<YoutubeContextType | undefined>(undefined);
@@ -64,6 +73,7 @@ export const YoutubeProvider: React.FC<{children: React.ReactNode}> = ({ childre
   const [competitors, setCompetitors] = useState<Channel[]>([]);
   const [viewsData, setViewsData] = useState<ViewsData>({});
   const [user, setUser] = useState<any>(null);
+  const [savedScripts, setSavedScripts] = useState<{[videoId: string]: SavedScript[]}>({});
   
   // Check if user is authenticated
   useEffect(() => {
@@ -98,6 +108,7 @@ export const YoutubeProvider: React.FC<{children: React.ReactNode}> = ({ childre
           setOwnChannel(null);
           setCompetitors([]);
           setViewsData({});
+          setSavedScripts({});
         }
       }
     );
@@ -108,6 +119,44 @@ export const YoutubeProvider: React.FC<{children: React.ReactNode}> = ({ childre
       subscription.unsubscribe();
     };
   }, []);
+  
+  // Load saved scripts for a video
+  const loadSavedScripts = async () => {
+    try {
+      if (!user) return;
+      
+      const { data, error } = await supabase
+        .from('saved_scripts')
+        .select('*')
+        .eq('user_id', user.id);
+        
+      if (error) throw error;
+      
+      const scriptsMap: {[videoId: string]: SavedScript[]} = {};
+      
+      data?.forEach(script => {
+        if (!scriptsMap[script.video_id]) {
+          scriptsMap[script.video_id] = [];
+        }
+        
+        scriptsMap[script.video_id].push({
+          id: script.id,
+          content: script.content,
+          createdAt: script.created_at,
+          videoId: script.video_id
+        });
+      });
+      
+      setSavedScripts(scriptsMap);
+    } catch (error) {
+      console.error("Error loading saved scripts:", error);
+    }
+  };
+  
+  // Get saved scripts for a video
+  const getSavedScripts = (videoId: string): SavedScript[] => {
+    return savedScripts[videoId] || [];
+  };
   
   // Load user's data: profile, competitor channels, and analytics
   const loadUserData = async (userId: string) => {
@@ -130,6 +179,9 @@ export const YoutubeProvider: React.FC<{children: React.ReactNode}> = ({ childre
       
       // Load daily views data
       await loadViewsData();
+      
+      // Load saved scripts
+      await loadSavedScripts();
       
     } catch (error) {
       console.error("Error loading user data:", error);
@@ -516,7 +568,8 @@ export const YoutubeProvider: React.FC<{children: React.ReactNode}> = ({ childre
     logout,
     addCompetitor,
     removeCompetitor,
-    refreshData
+    refreshData,
+    getSavedScripts
   };
   
   return (

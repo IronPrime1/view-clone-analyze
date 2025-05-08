@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -12,7 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
 
 const Clone: React.FC = () => {
-  const { competitors } = useYoutube();
+  const { competitors, user } = useYoutube();
   const [selectedCompetitor, setSelectedCompetitor] = useState<string | null>(null);
   const [selectedVideo, setSelectedVideo] = useState<string | null>(null);
   const [userVideoUrl, setUserVideoUrl] = useState('');
@@ -111,6 +110,7 @@ const Clone: React.FC = () => {
       const { data, error } = await supabase
         .from('saved_scripts')
         .insert({
+          user_id: supabase.auth.getUser().then(({ data }) => data.user?.id),
           video_id: selectedVideo,
           content: generatedScript
         })

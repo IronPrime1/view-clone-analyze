@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { useYoutube } from '../contexts/YoutubeContext';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from '../components/ui/dialog';
 import { Input } from '../components/ui/input';
@@ -191,7 +191,7 @@ const Competitors: React.FC = () => {
                   <TabsContent value="shorts" className="space-y-4">
                     {competitor.videos?.filter(video => video.isShort).map(video => (
                       <div key={video.id} className="flex gap-4 pb-4 border-b">
-                        <div className="flex-shrink-0 w-32 h-18">
+                        <div className="flex-shrink-0 w-32 h-18 relative">
                           <img 
                             src={video.thumbnail} 
                             alt={video.title}
