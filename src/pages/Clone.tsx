@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -128,7 +127,7 @@ const Clone: React.FC = () => {
       if (error) throw error;
       
       // Add to saved scripts
-      setSavedScripts([...(data || []), savedScripts]);
+      setSavedScripts([...(data || []), ...savedScripts]);
       
       toast.success("Script saved successfully");
     } catch (error: any) {

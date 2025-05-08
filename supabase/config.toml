@@ -6,3 +6,6 @@ verify_jwt = true
 
 [functions.clone-script]
 verify_jwt = true
+
+[functions.youtube-fetch]
+verify_jwt = true

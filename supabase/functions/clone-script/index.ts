@@ -1,5 +1,6 @@
 
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.4.0";
 
 // Set up CORS headers
 const corsHeaders = {
@@ -15,14 +16,100 @@ async function handleCors(req: Request) {
   return null;
 }
 
-// Define the script clone handler
+// Helper function to extract video ID from URL
+function extractVideoId(url: string): string | null {
+  const patterns = [
+    /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i,
+    /^[a-zA-Z0-9_-]{11}$/
+  ];
+  
+  for (const pattern of patterns) {
+    const match = url.match(pattern);
+    if (match && match[1]) return match[1];
+  }
+  
+  return null;
+}
+
+// Helper function to fetch video data from YouTube API
+async function fetchVideoDetails(videoId: string, apiKey: string) {
+  try {
+    const response = await fetch(
+      `https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails,statistics&id=${videoId}&key=${apiKey}`
+    );
+    
+    if (!response.ok) {
+      throw new Error("Failed to fetch video details from YouTube API");
+    }
+    
+    const data = await response.json();
+    
+    if (!data.items || data.items.length === 0) {
+      throw new Error("No video found with the provided ID");
+    }
+    
+    const video = data.items[0];
+    
+    return {
+      title: video.snippet.title,
+      description: video.snippet.description,
+      channelTitle: video.snippet.channelTitle,
+      publishedAt: video.snippet.publishedAt,
+      tags: video.snippet.tags || []
+    };
+  } catch (error) {
+    console.error("Error fetching video details:", error);
+    throw error;
+  }
+}
+
+// Function to generate a video script based on competitor video
+function generateScript(competitorVideo: any, userVideo: any | null) {
+  // Generate intro
+  const intro = `# ${competitorVideo.title}\n\n## Introduction\n`;
+  
+  // Generate hook
+  const hook = `Hello everyone, welcome back to the channel. Today we're going to be talking about ${competitorVideo.title.toLowerCase()}.\n\n`;
+  
+  // Generate main content
+  const mainContent = `## Main Content\n\n`;
+  
+  // Generate description content
+  let descriptionParagraphs = competitorVideo.description
+    .split('\n\n')
+    .filter((p: string) => p.length > 30)
+    .slice(0, 3)
+    .map((p: string) => `- ${p.replace(/http\S+/g, '')}\n`)
+    .join('\n');
+  
+  if (!descriptionParagraphs) {
+    descriptionParagraphs = "- Let's dive into this topic in detail\n- Make sure to cover all important aspects\n- Remember to explain key concepts clearly";
+  }
+  
+  // Generate outro
+  const outro = `\n\n## Conclusion\n\nThank you for watching! If you found this video helpful, please like and subscribe for more content like this. Let me know in the comments if you have any questions or suggestions for future videos.`;
+  
+  // Add user video reference if available
+  const userVideoSection = userVideo ? 
+    `\n\n## Personal Insights\nIn my previous video on ${userVideo.title}, we talked about similar concepts. Let's build upon those ideas with some new insights...\n\n` : '';
+  
+  // Generate tags section
+  const tags = competitorVideo.tags && competitorVideo.tags.length > 0 ?
+    `\n\n## Tags\n${competitorVideo.tags.slice(0, 8).map((tag: string) => `#${tag.replace(/\s+/g, '')}`).join(' ')}` :
+    '';
+  
+  // Combine all sections
+  return `${intro}${hook}${mainContent}${descriptionParagraphs}${userVideoSection}${outro}${tags}`;
+}
+
+// Define the API handler
 serve(async (req) => {
   // Handle CORS
   const corsResponse = await handleCors(req);
   if (corsResponse) return corsResponse;
 
   try {
-    // Parse the request
+    // Parse the request body
     const { competitorVideoUrl, userVideoUrl } = await req.json();
     
     // Validate request data
@@ -33,30 +120,56 @@ serve(async (req) => {
       );
     }
     
-    // Extract video ID from URL
-    const videoId = extractYouTubeVideoId(competitorVideoUrl);
+    // Extract video IDs
+    const competitorVideoId = extractVideoId(competitorVideoUrl);
+    const userVideoId = userVideoUrl ? extractVideoId(userVideoUrl) : null;
     
-    if (!videoId) {
+    if (!competitorVideoId) {
       return new Response(
-        JSON.stringify({ error: "Invalid YouTube URL" }),
+        JSON.stringify({ error: "Invalid competitor video URL or ID" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
     
-    // Fetch video data and transcript
-    // For now, we'll generate a mock script since we don't have real API access
-    const script = generateMockScript(videoId, userVideoUrl);
+    // Get YouTube API key
+    const apiKey = Deno.env.get("YOUTUBE_API_KEY") || "AIzaSyDKh3CDFoL69CuW6aFxTW-u9igrootuqpk";
     
-    // Return the generated script
+    if (!apiKey) {
+      return new Response(
+        JSON.stringify({ error: "YouTube API key not configured" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    
+    // Fetch video details
+    const competitorVideo = await fetchVideoDetails(competitorVideoId, apiKey);
+    let userVideo = null;
+    
+    if (userVideoId) {
+      try {
+        userVideo = await fetchVideoDetails(userVideoId, apiKey);
+      } catch (error) {
+        console.error("Error fetching user video:", error);
+        // Continue without user video
+      }
+    }
+    
+    // Generate script
+    const script = generateScript(competitorVideo, userVideo);
+    
+    // Return success response
     return new Response(
-      JSON.stringify({ success: true, script }),
+      JSON.stringify({ 
+        success: true, 
+        script
+      }),
       { 
         status: 200, 
         headers: { ...corsHeaders, "Content-Type": "application/json" }
       }
     );
     
-  } catch (error) {
+  } catch (error: any) {
     console.error("Script generation error:", error.message);
     
     return new Response(
@@ -68,75 +181,3 @@ serve(async (req) => {
     );
   }
 });
-
-// Extract YouTube video ID from URL
-function extractYouTubeVideoId(url: string): string | null {
-  const regex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
-  const match = url.match(regex);
-  return match ? match[1] : null;
-}
-
-// Generate a mock script
-function generateMockScript(videoId: string, userVideoUrl?: string): string {
-  const topics = [
-    "audience engagement strategies", 
-    "SEO optimization tips",
-    "trends in the industry",
-    "content creation workflow",
-    "storytelling techniques"
-  ];
-  
-  const randomTopic = topics[Math.floor(Math.random() * topics.length)];
-  const includeUserVideo = userVideoUrl ? true : false;
-  const currentDate = new Date().toLocaleDateString();
-  
-  let script = `# Video Script Based on Competitor Analysis
-Generated on ${currentDate}
-Video ID: ${videoId}
-
-## Introduction
-- Hook viewers with a compelling statement about ${randomTopic}
-- Introduce yourself and the topic of today's video
-- Mention why this topic matters to your audience
-
-## Main Content
-1. **Key Point 1: Understanding ${randomTopic}**
-   - Explain the fundamentals
-   - Share relevant statistics
-   - Provide real-world examples
-
-2. **Key Point 2: Implementation Strategies**
-   - Step-by-step approach
-   - Common mistakes to avoid
-   - Tools and resources needed
-
-3. **Key Point 3: Results You Can Expect**
-   - Short-term benefits
-   - Long-term impact
-   - Case studies or success stories
-
-## Conclusion
-- Summarize the main points
-- Call to action: Like, subscribe, comment
-- Tease upcoming related content
-`;
-
-  if (includeUserVideo) {
-    script += `\n## Integration with Your Existing Content
-- This script has been tailored to match your existing style and content
-- Recommended to reference your previous video on a related topic
-- Consider creating a series where this video is part 2 of your content strategy
-`;
-  }
-
-  script += `\n## Technical Notes
-- Optimal video length: 8-12 minutes
-- Add timestamps in video description
-- Include 3-5 keywords in title and description
-- Suggested thumbnail: Image showing before/after results
-
-## Script Optimization
-This script is designed to increase engagement and retention based on competitor analysis. Be sure to add your personal style and examples to make the content unique.`;
-
-  return script;
-}

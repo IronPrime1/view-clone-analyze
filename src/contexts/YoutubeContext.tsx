@@ -1,7 +1,7 @@
 
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { supabase } from '../integrations/supabase/client';
-import { toast } from '../components/ui/sonner';
+import { toast } from 'sonner';
 
 // Define types
 interface Video {
@@ -72,7 +72,6 @@ export const YoutubeProvider: React.FC<{children: React.ReactNode}> = ({ childre
   const [ownChannel, setOwnChannel] = useState<Channel | null>(null);
   const [competitors, setCompetitors] = useState<Channel[]>([]);
   const [viewsData, setViewsData] = useState<ViewsData>({});
-  const [user, setUser] = useState<any>(null);
   const [savedScripts, setSavedScripts] = useState<{[videoId: string]: SavedScript[]}>({});
   
   // Check if user is authenticated
@@ -80,7 +79,6 @@ export const YoutubeProvider: React.FC<{children: React.ReactNode}> = ({ childre
     const checkUser = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
-        setUser(session?.user || null);
         setIsAuthenticated(!!session?.user);
         
         if (session?.user) {
@@ -96,7 +94,6 @@ export const YoutubeProvider: React.FC<{children: React.ReactNode}> = ({ childre
     // Subscribe to auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        setUser(session?.user || null);
         setIsAuthenticated(!!session?.user);
         
         if (event === 'SIGNED_IN' && session?.user) {
@@ -123,6 +120,7 @@ export const YoutubeProvider: React.FC<{children: React.ReactNode}> = ({ childre
   // Load saved scripts for a video
   const loadSavedScripts = async () => {
     try {
+      const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
       
       const { data, error } = await supabase
@@ -171,7 +169,7 @@ export const YoutubeProvider: React.FC<{children: React.ReactNode}> = ({ childre
         .single();
       
       if (profile?.youtube_connected) {
-        await loadOwnChannel();
+        await loadOwnChannel(profile);
       }
       
       // Load competitor channels
@@ -191,21 +189,35 @@ export const YoutubeProvider: React.FC<{children: React.ReactNode}> = ({ childre
     }
   };
   
-  // Load the user's own YouTube channel data
-  const loadOwnChannel = async () => {
+  // Load the user's own YouTube channel data from their profile
+  const loadOwnChannel = async (profile: any) => {
     try {
-      // In a real app, we would call YouTube API here using the stored tokens
-      // For now, we'll use mock data
-      const mockChannel: Channel = {
-        id: "your-channel-id",
-        title: "Your YouTube Channel",
-        subscriberCount: 5480,
-        viewCount: 286400,
-        videoCount: 42,
-        thumbnail: "https://i.pravatar.cc/150?u=yourChannel"
-      };
-      
-      setOwnChannel(mockChannel);
+      if (profile.youtube_channel_id) {
+        const channel: Channel = {
+          id: profile.youtube_channel_id,
+          title: profile.youtube_channel_title || "Your Channel",
+          subscriberCount: profile.youtube_subscriber_count || 0,
+          viewCount: profile.youtube_view_count || 0,
+          videoCount: profile.youtube_video_count || 0,
+          thumbnail: profile.youtube_channel_thumbnail || "https://via.placeholder.com/48",
+        };
+        
+        // Fetch videos if needed
+        if (!channel.videos) {
+          const { data, error } = await supabase.functions.invoke('youtube-fetch', {
+            body: {
+              channelId: channel.id,
+              action: 'get_channel_data'
+            }
+          });
+          
+          if (!error && data?.channel?.videos) {
+            channel.videos = data.channel.videos;
+          }
+        }
+        
+        setOwnChannel(channel);
+      }
     } catch (error) {
       console.error("Error loading own channel:", error);
       toast.error("Failed to load your YouTube channel data");
@@ -329,13 +341,35 @@ export const YoutubeProvider: React.FC<{children: React.ReactNode}> = ({ childre
     setIsLoading(true);
     
     try {
-      // In a real app, you'd redirect to YouTube OAuth
-      // For this prototype, we'll simulate success
+      // Google OAuth URL setup
+      const clientId = "YOUR_CLIENT_ID"; // This would be replaced with your real client ID
+      const redirectUri = `${window.location.origin}/auth`;
+      const scope = "https://www.googleapis.com/auth/youtube.readonly";
+      const responseType = "code";
+      const accessType = "offline";
+      const prompt = "consent";
+      
+      // Build authorization URL
+      const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scope)}&response_type=${responseType}&access_type=${accessType}&prompt=${prompt}`;
+      
+      // For now, we'll simulate success with toast messages since we don't have a working OAuth flow
+      toast.info("Connecting to YouTube...");
+      
+      // In a real app, we'd redirect to Google's OAuth page
+      // window.location.href = authUrl;
       
       // Simulate successful YouTube auth
       setTimeout(() => {
         setIsAuthenticated(true);
-        loadOwnChannel();
+        loadOwnChannel({
+          youtube_connected: true,
+          youtube_channel_id: "UC_x5XG1OV2P6uZZ5FSM9Ttw",
+          youtube_channel_title: "Your YouTube Channel",
+          youtube_subscriber_count: 5480,
+          youtube_view_count: 286400,
+          youtube_video_count: 42,
+          youtube_channel_thumbnail: "https://i.pravatar.cc/150?u=yourChannel"
+        });
         toast.success("Successfully connected to YouTube");
         setIsLoading(false);
       }, 1500);
@@ -370,36 +404,42 @@ export const YoutubeProvider: React.FC<{children: React.ReactNode}> = ({ childre
     
     try {
       // Extract channel ID or username from input
-      // In a real app, we'd call YouTube API to get channel details
+      let channelId = channelInput;
       
-      // For now, create a mock competitor
-      const randomId = Math.random().toString(36).substring(2, 15);
-      const randomSubscribers = Math.floor(Math.random() * 9000) + 1000;
-      const randomViews = randomSubscribers * (Math.floor(Math.random() * 50) + 20);
-      const randomVideos = Math.floor(Math.random() * 100) + 10;
+      // If it's a URL, extract the channel ID
+      if (channelInput.includes('youtube.com') || channelInput.includes('youtu.be')) {
+        const url = new URL(channelInput);
+        if (url.pathname.includes('/channel/')) {
+          // Extract channel ID from URL like youtube.com/channel/UCxxxxx
+          channelId = url.pathname.split('/channel/')[1].split('/')[0];
+        } else if (url.pathname.includes('/c/')) {
+          // This is a custom URL, need to first resolve to channel ID
+          // For simplicity, we'll use it directly but in a real app would need
+          // to first convert to a channel ID using YouTube API
+          channelId = url.pathname.split('/c/')[1].split('/')[0];
+        } else if (url.pathname.includes('/user/')) {
+          channelId = url.pathname.split('/user/')[1].split('/')[0];
+        }
+      }
       
-      const newCompetitor = {
-        youtube_id: randomId,
-        user_id: user.id,
-        title: channelInput.includes('/') ? 
-          channelInput.split('/').pop() || "Competitor Channel" : 
-          channelInput,
-        thumbnail: `https://i.pravatar.cc/150?u=${randomId}`,
-        subscriber_count: randomSubscribers,
-        video_count: randomVideos,
-        view_count: randomViews
-      };
+      // Call our edge function to add the competitor
+      const { data: userData } = await supabase.auth.getUser();
       
-      const { data, error } = await supabase
-        .from('competitor_channels')
-        .insert(newCompetitor)
-        .select();
+      if (!userData.user) {
+        throw new Error("You must be logged in to add competitors");
+      }
+      
+      const { data, error } = await supabase.functions.invoke('youtube-fetch', {
+        body: {
+          channelId: channelId,
+          action: 'add_competitor'
+        }
+      });
       
       if (error) throw error;
       
-      // Add mock videos
-      if (data?.[0]) {
-        await addMockVideos(data[0].id, randomId);
+      if (!data.success) {
+        throw new Error(data.error || "Failed to add competitor");
       }
       
       toast.success("Competitor channel added");
@@ -416,91 +456,23 @@ export const YoutubeProvider: React.FC<{children: React.ReactNode}> = ({ childre
     }
   };
   
-  // Add mock videos for a competitor channel
-  const addMockVideos = async (channelDbId: string, youtubeId: string) => {
-    const videoCount = Math.floor(Math.random() * 6) + 5; // 5-10 videos
-    
-    const mockVideos = Array.from({ length: videoCount }, (_, i) => {
-      const isShort = i % 3 === 0; // Every 3rd video is a short
-      const videoId = `v-${Math.random().toString(36).substring(2, 10)}`;
-      const viewCount = isShort ? 
-        Math.floor(Math.random() * 50000) + 10000 : 
-        Math.floor(Math.random() * 10000) + 1000;
-      
-      const daysAgo = Math.floor(Math.random() * 7);
-      const pubDate = new Date();
-      pubDate.setDate(pubDate.getDate() - daysAgo);
-      
-      return {
-        channel_id: channelDbId,
-        youtube_id: videoId,
-        title: isShort ? 
-          `Quick ${i + 1}: How to boost engagement instantly` : 
-          `The complete guide to growing on YouTube - Part ${i + 1}`,
-        description: isShort ? 
-          "Short video tip for quick growth!" : 
-          "In this video, I share my top strategies for growth on YouTube in 2023...",
-        published_at: pubDate.toISOString(),
-        thumbnail: `https://picsum.photos/id/${Math.floor(Math.random() * 100)}/640/360`,
-        view_count: viewCount,
-        like_count: Math.floor(viewCount * 0.1),
-        comment_count: Math.floor(viewCount * 0.02),
-        is_short: isShort
-      };
-    });
-    
-    try {
-      const { error } = await supabase
-        .from('competitor_videos')
-        .insert(mockVideos);
-      
-      if (error) throw error;
-      
-      // Generate daily view data
-      await generateMockDailyViews(youtubeId);
-      
-    } catch (error) {
-      console.error("Error adding mock videos:", error);
-    }
-  };
-  
-  // Generate mock daily view data for a channel
-  const generateMockDailyViews = async (youtubeId: string) => {
-    const dates = Array.from({length: 7}, (_, i) => {
-      const d = new Date();
-      d.setDate(d.getDate() - (6 - i));
-      return d.toISOString().split('T')[0];
-    });
-    
-    const mockViews = dates.map(date => ({
-      channel_id: youtubeId,
-      user_id: user.id,
-      date: date,
-      views: Math.floor(Math.random() * 1000) + 300
-    }));
-    
-    try {
-      const { error } = await supabase
-        .from('daily_views')
-        .insert(mockViews);
-      
-      if (error) throw error;
-    } catch (error) {
-      console.error("Error generating mock views:", error);
-    }
-  };
-  
   // Remove a competitor channel
   const removeCompetitor = async (youtubeId: string) => {
     setIsLoading(true);
     
     try {
       // First find the db id for the YouTube ID
+      const { data: userData } = await supabase.auth.getUser();
+      
+      if (!userData.user) {
+        throw new Error("You must be logged in to remove competitors");
+      }
+      
       const { data, error } = await supabase
         .from('competitor_channels')
         .select('id')
         .eq('youtube_id', youtubeId)
-        .eq('user_id', user.id)
+        .eq('user_id', userData.user.id)
         .single();
         
       if (error) throw error;
@@ -519,7 +491,7 @@ export const YoutubeProvider: React.FC<{children: React.ReactNode}> = ({ childre
         .from('daily_views')
         .delete()
         .eq('channel_id', youtubeId)
-        .eq('user_id', user.id);
+        .eq('user_id', userData.user.id);
         
       if (viewsError) throw viewsError;
       
@@ -532,9 +504,9 @@ export const YoutubeProvider: React.FC<{children: React.ReactNode}> = ({ childre
       setViewsData(newViewsData);
       
       toast.success("Competitor removed");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error removing competitor:", error);
-      toast.error("Failed to remove competitor");
+      toast.error(error.message || "Failed to remove competitor");
     } finally {
       setIsLoading(false);
     }
@@ -546,10 +518,9 @@ export const YoutubeProvider: React.FC<{children: React.ReactNode}> = ({ childre
     
     try {
       // In a real app, we would call YouTube API again
-      toast.success("Data refreshed successfully");
-      
       await loadCompetitors();
       await loadViewsData();
+      toast.success("Data refreshed successfully");
     } catch (error) {
       console.error("Error refreshing data:", error);
       toast.error("Failed to refresh data");

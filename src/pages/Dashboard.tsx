@@ -6,11 +6,12 @@ import { Button } from '../components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from '../components/ui/dialog';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
-import { PlusCircle, RefreshCw } from 'lucide-react';
+import { PlusCircle, RefreshCw, Youtube } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { toast } from 'sonner';
 
 const Dashboard: React.FC = () => {
-  const { ownChannel, competitors, viewsData, addCompetitor, refreshData, isLoading } = useYoutube();
+  const { ownChannel, competitors, viewsData, addCompetitor, refreshData, isLoading, login } = useYoutube();
   const [channelInput, setChannelInput] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
   
@@ -74,12 +75,25 @@ const Dashboard: React.FC = () => {
     return colors[index % colors.length];
   };
   
+  const handleConnectYoutube = () => {
+    login()
+      .then(() => toast.success("YouTube channel connected successfully"))
+      .catch(err => toast.error("Failed to connect YouTube channel"));
+  };
+  
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Dashboard</h1>
         
         <div className="flex gap-2">
+          {!ownChannel && (
+            <Button onClick={handleConnectYoutube} className="bg-youtube-red hover:bg-youtube-red/90">
+              <Youtube className="h-4 w-4 mr-2" />
+              Add Your Channel
+            </Button>
+          )}
+          
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
               <Button>
@@ -178,13 +192,21 @@ const Dashboard: React.FC = () => {
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {/* Own Channel Card */}
-        {ownChannel && (
+        {ownChannel ? (
           <Card className="shadow-sm border-2 border-primary/10">
             <CardHeader className="pb-2">
               <CardTitle className="flex items-center gap-2 text-lg">
-                <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white">
-                  {ownChannel.title?.charAt(0) || 'Y'}
-                </div>
+                {ownChannel.thumbnail ? (
+                  <img 
+                    src={ownChannel.thumbnail} 
+                    alt={ownChannel.title}
+                    className="w-8 h-8 rounded-full"
+                  />
+                ) : (
+                  <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white">
+                    {ownChannel.title?.charAt(0) || 'Y'}
+                  </div>
+                )}
                 <span className="truncate">{ownChannel.title || 'Your Channel'}</span>
               </CardTitle>
               <CardDescription>Your channel</CardDescription>
@@ -204,6 +226,20 @@ const Dashboard: React.FC = () => {
                   <p className="text-xs text-muted-foreground">Videos</p>
                 </div>
               </div>
+            </CardContent>
+          </Card>
+        ) : (
+          <Card className="shadow-sm border-2 border-dashed border-gray-300">
+            <CardContent className="flex flex-col items-center justify-center py-8">
+              <Youtube className="h-12 w-12 text-youtube-red mb-4" />
+              <h3 className="text-lg font-medium mb-2">Connect Your Channel</h3>
+              <p className="text-sm text-muted-foreground text-center mb-4">
+                Add your YouTube channel to see stats and compare with competitors
+              </p>
+              <Button onClick={handleConnectYoutube} className="bg-youtube-red hover:bg-youtube-red/90">
+                <Youtube className="h-4 w-4 mr-2" />
+                Connect YouTube
+              </Button>
             </CardContent>
           </Card>
         )}

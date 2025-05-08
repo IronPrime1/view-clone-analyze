@@ -74,12 +74,22 @@ serve(async (req) => {
     
     const { access_token, refresh_token, expires_in } = tokenData;
     
-    // Fetch YouTube channel data
-    const channelResponse = await fetch('https://www.googleapis.com/youtube/v3/channels?part=snippet,statistics&mine=true', {
-      headers: {
-        'Authorization': `Bearer ${access_token}`
-      }
-    });
+    // Use the provided YouTube API key
+    const youtubeApiKey = "AIzaSyDKh3CDFoL69CuW6aFxTW-u9igrootuqpk";
+    
+    // First try to get channel with access token
+    let channelResponse;
+    try {
+      channelResponse = await fetch('https://www.googleapis.com/youtube/v3/channels?part=snippet,statistics&mine=true', {
+        headers: {
+          'Authorization': `Bearer ${access_token}`
+        }
+      });
+    } catch (error) {
+      console.error("Error using access token, falling back to API key:", error);
+      // Fall back to API key if access token doesn't work
+      channelResponse = await fetch('https://www.googleapis.com/youtube/v3/channels?part=snippet,statistics&id=channel_id&key=' + youtubeApiKey);
+    }
     
     const channelData = await channelResponse.json();
     
@@ -95,6 +105,9 @@ serve(async (req) => {
     const channelId = channel.id;
     const channelTitle = channel.snippet.title;
     const channelThumbnail = channel.snippet.thumbnails.default.url;
+    const subscriberCount = parseInt(channel.statistics.subscriberCount) || 0;
+    const viewCount = parseInt(channel.statistics.viewCount) || 0;
+    const videoCount = parseInt(channel.statistics.videoCount) || 0;
     
     // Get current user ID from authorization header
     const authHeader = req.headers.get('Authorization');
@@ -126,7 +139,13 @@ serve(async (req) => {
         youtube_connected: true,
         youtube_token: access_token,
         youtube_refresh_token: refresh_token,
-        youtube_token_expiry: expiryTime.toISOString()
+        youtube_token_expiry: expiryTime.toISOString(),
+        youtube_channel_id: channelId,
+        youtube_channel_title: channelTitle,
+        youtube_channel_thumbnail: channelThumbnail,
+        youtube_subscriber_count: subscriberCount,
+        youtube_view_count: viewCount,
+        youtube_video_count: videoCount
       })
       .eq('id', user.id);
       
@@ -138,6 +157,94 @@ serve(async (req) => {
       );
     }
     
+    // Fetch videos for the channel (10 latest)
+    const getChannelVideos = async () => {
+      try {
+        // Get channel uploads playlist ID
+        const contentDetailsResponse = await fetch(
+          `https://www.googleapis.com/youtube/v3/channels?part=contentDetails&id=${channelId}&key=${youtubeApiKey}`
+        );
+        
+        if (!contentDetailsResponse.ok) {
+          throw new Error("Failed to fetch channel contentDetails");
+        }
+        
+        const contentDetailsData = await contentDetailsResponse.json();
+        
+        if (!contentDetailsData.items || contentDetailsData.items.length === 0) {
+          throw new Error("No channel found with the provided ID");
+        }
+        
+        const uploadsPlaylistId = contentDetailsData.items[0].contentDetails.relatedPlaylists.uploads;
+        
+        // Get videos from uploads playlist
+        const playlistResponse = await fetch(
+          `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet,contentDetails&maxResults=10&playlistId=${uploadsPlaylistId}&key=${youtubeApiKey}`
+        );
+        
+        if (!playlistResponse.ok) {
+          throw new Error("Failed to fetch playlist items");
+        }
+        
+        const playlistData = await playlistResponse.json();
+        
+        if (!playlistData.items) {
+          return [];
+        }
+        
+        // Get video IDs
+        const videoIds = playlistData.items.map((item: any) => item.contentDetails.videoId).join(',');
+        
+        // Get video details
+        const videosResponse = await fetch(
+          `https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics,contentDetails&id=${videoIds}&key=${youtubeApiKey}`
+        );
+        
+        if (!videosResponse.ok) {
+          throw new Error("Failed to fetch video details");
+        }
+        
+        const videosData = await videosResponse.json();
+        
+        if (!videosData.items) {
+          return [];
+        }
+        
+        // Format videos
+        return videosData.items.map((video: any) => {
+          // Check if it's a short (duration < 60 seconds)
+          let duration = video.contentDetails.duration;
+          const durationRegex = /PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/;
+          const matches = duration.match(durationRegex);
+          
+          const hours = matches[1] ? parseInt(matches[1]) : 0;
+          const minutes = matches[2] ? parseInt(matches[2]) : 0;
+          const seconds = matches[3] ? parseInt(matches[3]) : 0;
+          
+          const totalSeconds = hours * 3600 + minutes * 60 + seconds;
+          const isShort = totalSeconds <= 60;
+          
+          return {
+            id: video.id,
+            title: video.snippet.title,
+            description: video.snippet.description,
+            publishedAt: video.snippet.publishedAt,
+            thumbnail: video.snippet.thumbnails.medium?.url || video.snippet.thumbnails.default.url,
+            viewCount: parseInt(video.statistics.viewCount) || 0,
+            likeCount: parseInt(video.statistics.likeCount) || 0,
+            commentCount: parseInt(video.statistics.commentCount) || 0,
+            isShort
+          };
+        });
+      } catch (error) {
+        console.error("Error fetching videos:", error);
+        return [];
+      }
+    };
+    
+    // Get videos
+    const videos = await getChannelVideos();
+    
     // Return success response
     return new Response(
       JSON.stringify({
@@ -145,7 +252,11 @@ serve(async (req) => {
         channel: {
           id: channelId,
           title: channelTitle,
-          thumbnail: channelThumbnail
+          thumbnail: channelThumbnail,
+          subscriberCount,
+          viewCount,
+          videoCount,
+          videos
         }
       }),
       { 
