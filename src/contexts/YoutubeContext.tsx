@@ -1,5 +1,5 @@
 
-import React, { createContext, useState, useContext, useEffect } from 'react';
+import React, { createContext, useState, useContext, useEffect, useRef } from 'react';
 import { supabase } from '../integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -73,49 +73,50 @@ export const YoutubeProvider: React.FC<{children: React.ReactNode}> = ({ childre
   const [competitors, setCompetitors] = useState<Channel[]>([]);
   const [viewsData, setViewsData] = useState<ViewsData>({});
   const [savedScripts, setSavedScripts] = useState<{[videoId: string]: SavedScript[]}>({});
+  const sessionLoadedRef = useRef(false);
   
   // Check if user is authenticated
   useEffect(() => {
-    const checkUser = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        setIsAuthenticated(!!session?.user);
-        
-        if (session?.user) {
-          await loadUserData(session.user.id);
-        }
-      } catch (error) {
-        console.error("Authentication error:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+      const checkUser = async () => {
+        try {
+          const { data: { session } } = await supabase.auth.getSession();
+          setIsAuthenticated(!!session?.user);
 
-    // Subscribe to auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        setIsAuthenticated(!!session?.user);
-        
-        if (event === 'SIGNED_IN' && session?.user) {
-          // Use setTimeout to prevent potential deadlocks
-          setTimeout(() => {
-            loadUserData(session.user.id);
-          }, 0);
-        } else if (event === 'SIGNED_OUT') {
-          setOwnChannel(null);
-          setCompetitors([]);
-          setViewsData({});
-          setSavedScripts({});
+          if (session?.user) {
+            sessionLoadedRef.current = true;
+            await loadUserData(session.user.id);
+          }
+        } catch (error) {
+          console.error("Authentication error:", error);
+        } finally {
+          setIsLoading(false);
         }
-      }
-    );
+      };
 
-    checkUser();
-    
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, []);
+      const { data: { subscription } } = supabase.auth.onAuthStateChange(
+        async (event, session) => {
+          setIsAuthenticated(!!session?.user);
+
+          if (event === 'SIGNED_IN' && session?.user && !sessionLoadedRef.current) {
+            setTimeout(() => {
+              loadUserData(session.user.id);
+            }, 0);
+          } else if (event === 'SIGNED_OUT') {
+            setOwnChannel(null);
+            setCompetitors([]);
+            setViewsData({});
+            setSavedScripts({});
+          }
+        }
+      );
+
+      checkUser();
+
+      return () => {
+        subscription.unsubscribe();
+      };
+    }, []);
+
   
   // Load saved scripts for a video
   const loadSavedScripts = async () => {

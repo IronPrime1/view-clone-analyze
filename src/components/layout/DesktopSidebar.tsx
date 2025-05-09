@@ -12,12 +12,16 @@ const DesktopSidebar: React.FC = () => {
     <div className="desktop-nav w-64 bg-sidebar text-sidebar-foreground flex-shrink-0 hidden md:block">
       <div className="flex flex-col h-full">
         <div className="p-4 border-b border-sidebar-border">
-          <div className="flex items-center gap-2">
-            <Youtube className="h-6 w-6 text-youtube-red" />
-            <h1 className="text-xl font-bold">YT Analyzer</h1>
+          <div className="flex items-center gap-2 align-center">
+            <Youtube className="h-8 w-8 text-youtube-red" />
+            <h1 className="text-xl font-bold">ScriptX</h1>
           </div>
-          {isAuthenticated && ownChannel && (
-            <div className="mt-4">
+        </div>
+        
+        <nav className="flex-1 p-4">
+          <ul className="space-y-2">
+            {isAuthenticated && ownChannel && (
+            <div className="mt-0">
               <div className="flex items-center gap-2">
                 <img 
                   src={ownChannel.thumbnail} 
@@ -31,10 +35,6 @@ const DesktopSidebar: React.FC = () => {
               </div>
             </div>
           )}
-        </div>
-        
-        <nav className="flex-1 p-4">
-          <ul className="space-y-2">
             <li>
               <NavLink 
                 to="/" 

@@ -87,26 +87,26 @@ const Dashboard: React.FC = () => {
   };
   
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 px-2 pb-2">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Dashboard</h1>
+        <h1 className="text-xl font-bold">Dashboard</h1>
         
         {/* Action buttons */}
         <div className="flex gap-2">
           {!ownChannel && (
-            <Button onClick={handleConnectYoutube} className="bg-youtube-red hover:bg-youtube-red/90">
-              <Upload className="h-4 w-4 mr-2" />
+            <Button onClick={handleConnectYoutube} className="bg-youtube-red hover:bg-youtube-red/90 h-8 w-10">
+              <Upload className="h-2 w-2" />
               <span className="hidden sm:inline">Add Your Channel</span>
             </Button>
           )}
           
-          <Button onClick={() => setDialogOpen(true)}>
-            <PlusCircle className="h-4 w-4 mr-2" />
+          <Button onClick={() => setDialogOpen(true)} className="h-8 w-10">
+            <PlusCircle className="h-2 w-2" />
             <span className="hidden sm:inline">Add Competitor</span>
           </Button>
           
-          <Button variant="outline" onClick={refreshData} disabled={isLoading}>
-            <RefreshCw className={`h-4 w-4 ${!isLoading && "mr-2"} ${isLoading ? 'animate-spin' : ''}`} />
+          <Button variant="outline" onClick={refreshData} disabled={isLoading} className="h-8 w-10">
+            <RefreshCw className={`h-2 w-2 ${isLoading ? 'animate-spin' : ''}`} />
             <span className="hidden sm:inline">Refresh</span>
           </Button>
         </div>
@@ -135,16 +135,64 @@ const Dashboard: React.FC = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {ownChannel ? (
+          <Card className="shadow-sm border-2 border-primary/10">
+            <CardHeader className="pb-4">
+              <CardTitle className="flex items-center gap-2 text-lg align-center justify-center">
+                {ownChannel.thumbnail ? (
+                  <img 
+                    src={ownChannel.thumbnail} 
+                    alt={ownChannel.title}
+                    className="w-8 h-8 rounded-full"
+                  />
+                ) : (
+                  <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white">
+                    <User className="h-4 w-4" />
+                  </div>
+                )}
+                <span className="truncate text-blue-600">{ownChannel.title || 'Your Channel'}</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <div className="grid grid-cols-3 gap-2 text-center">
+                <div>
+                  <p className="text-sm font-medium">{ownChannel.subscriberCount.toLocaleString()}</p>
+                  <p className="text-xs text-muted-foreground">Subscribers</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium">{ownChannel.viewCount.toLocaleString()}</p>
+                  <p className="text-xs text-muted-foreground">Total Views</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium">{ownChannel.videoCount.toLocaleString()}</p>
+                  <p className="text-xs text-muted-foreground">Videos</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ) : (
+          <Card className="shadow-sm border-2 border-dashed border-gray-300">
+            <CardContent className="flex flex-col items-center justify-center py-8">
+              <Upload className="h-12 w-12 text-youtube-red mb-4" />
+              <h3 className="text-lg font-medium mb-2">Connect Your Channel</h3>
+              <p className="text-sm text-muted-foreground text-center mb-4">
+                Add your YouTube channel to see stats
+              </p>
+              <Button onClick={handleConnectYoutube} className="bg-youtube-red hover:bg-youtube-red/90">
+                <Upload className="h-4 w-4 mr-2" />
+                Connect YouTube
+              </Button>
+            </CardContent>
+          </Card>
+        )}
       
       <Card className="shadow-sm">
-        <CardHeader className="pb-2">
-          <CardTitle>Views Comparison - Last 7 Days</CardTitle>
-          <CardDescription>
-            Compare daily views between your channel and competitors
-          </CardDescription>
+        <CardHeader className="pb-4 pt-4 mt-0">
+          <CardTitle className="text-lg text-center">Views Comparison - Last 7 Days</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="h-[300px]">
+          <div className="sm:h-[300px] h-[200px]">
             {chartData.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart
@@ -215,72 +263,18 @@ const Dashboard: React.FC = () => {
       </Card>
       
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {/* Own Channel Card */}
-        {ownChannel ? (
-          <Card className="shadow-sm border-2 border-primary/10">
-            <CardHeader className="pb-2">
-              <CardTitle className="flex items-center gap-2 text-lg">
-                {ownChannel.thumbnail ? (
-                  <img 
-                    src={ownChannel.thumbnail} 
-                    alt={ownChannel.title}
-                    className="w-8 h-8 rounded-full"
-                  />
-                ) : (
-                  <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white">
-                    <User className="h-4 w-4" />
-                  </div>
-                )}
-                <span className="truncate">{ownChannel.title || 'Your Channel'}</span>
-              </CardTitle>
-              <CardDescription>Your channel</CardDescription>
-            </CardHeader>
-            <CardContent className="pt-0">
-              <div className="grid grid-cols-3 gap-2 text-center">
-                <div>
-                  <p className="text-sm font-medium">{ownChannel.subscriberCount.toLocaleString()}</p>
-                  <p className="text-xs text-muted-foreground">Subscribers</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium">{ownChannel.viewCount.toLocaleString()}</p>
-                  <p className="text-xs text-muted-foreground">Total Views</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium">{ownChannel.videoCount.toLocaleString()}</p>
-                  <p className="text-xs text-muted-foreground">Videos</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ) : (
-          <Card className="shadow-sm border-2 border-dashed border-gray-300">
-            <CardContent className="flex flex-col items-center justify-center py-8">
-              <Upload className="h-12 w-12 text-youtube-red mb-4" />
-              <h3 className="text-lg font-medium mb-2">Connect Your Channel</h3>
-              <p className="text-sm text-muted-foreground text-center mb-4">
-                Add your YouTube channel to see stats
-              </p>
-              <Button onClick={handleConnectYoutube} className="bg-youtube-red hover:bg-youtube-red/90">
-                <Upload className="h-4 w-4 mr-2" />
-                Connect YouTube
-              </Button>
-            </CardContent>
-          </Card>
-        )}
-        
         {/* Competitor Channel Cards */}
         {competitors.slice(0, 5).map(competitor => (
           <Card key={competitor.id} className="shadow-sm">
-            <CardHeader className="pb-2">
-              <CardTitle className="flex items-center gap-2 text-lg">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-lg justify-center align-center">
                 <img 
                   src={competitor.thumbnail} 
                   alt={competitor.title}
                   className="w-8 h-8 rounded-full"
                 />
-                <span className="truncate">{competitor.title}</span>
+                <span className="truncate text-red-600">{competitor.title}</span>
               </CardTitle>
-              <CardDescription>Competitor</CardDescription>
             </CardHeader>
             <CardContent className="pt-0">
               <div className="grid grid-cols-3 gap-2 text-center">

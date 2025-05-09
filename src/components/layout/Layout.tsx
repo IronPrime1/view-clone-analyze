@@ -9,6 +9,7 @@ import AuthRequired from '../auth/AuthRequired';
 import { Youtube, Menu, LayoutDashboard, Users, Clipboard as ClipboardIcon, Code } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { useLocation } from 'react-router-dom';
 
 const Layout: React.FC = () => {
   const { isLoading, ownChannel } = useYoutube();
@@ -16,23 +17,28 @@ const Layout: React.FC = () => {
   const [open, setOpen] = useState(false);
   
   useEffect(() => {
-    const checkAuth = async () => {
-      const { data } = await supabase.auth.getSession();
-      if (!data.session) {
-        navigate('/auth', { replace: true });
-      }
-    };
-    
-    checkAuth();
-    
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'SIGNED_OUT') {
-        navigate('/auth', { replace: true });
-      }
-    });
-    
-    return () => subscription.unsubscribe();
-  }, [navigate]);
+      const checkAuth = async () => {
+        try {
+          const { data } = await supabase.auth.getSession();
+          if (!data.session && location.pathname !== '/auth') {
+            navigate('/auth', { replace: true });
+          }
+        } catch (error) {
+          console.error("Error checking session:", error);
+          navigate('/auth', { replace: true });
+        }
+      };
+
+      checkAuth();
+      
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+        if (event === 'SIGNED_OUT' && location.pathname !== '/auth') {
+          navigate('/auth', { replace: true });
+        }
+      });
+
+      return () => subscription.unsubscribe();
+    }, [navigate, location]);
 
   return (
     <div className="flex flex-col md:flex-row min-h-screen w-full">
@@ -40,7 +46,7 @@ const Layout: React.FC = () => {
       <header className="md:hidden sticky top-0 z-10 bg-background border-b flex items-center justify-between px-4 py-2">
         <div className="flex items-center gap-2">
           <Youtube className="h-6 w-6 text-youtube-red" />
-          <h1 className="text-lg font-bold">YT Analyzer</h1>
+          <h1 className="text-lg font-bold">ScriptX</h1>
         </div>
         
         <Sheet open={open} onOpenChange={setOpen}>
@@ -55,7 +61,7 @@ const Layout: React.FC = () => {
               <div className="p-4 border-b border-sidebar-border">
                 <div className="flex items-center gap-2">
                   <Youtube className="h-6 w-6 text-youtube-red" />
-                  <h1 className="text-xl font-bold">YT Analyzer</h1>
+                  <h1 className="text-xl font-bold">ScriptX</h1>
                 </div>
                 {ownChannel && (
                   <div className="mt-4">

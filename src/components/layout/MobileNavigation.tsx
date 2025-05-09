@@ -9,49 +9,49 @@ const MobileNavigation: React.FC = () => {
       <NavLink 
         to="/" 
         className={({ isActive }) => 
-          `flex flex-col items-center py-3 px-2 ${
+          `flex flex-col items-center py-2 px-2 ${
             isActive ? 'text-primary' : 'text-muted-foreground'
           }`
         }
         end
       >
-        <LayoutDashboard className="h-6 w-6" />
+        <LayoutDashboard className="h-5 w-5" />
         <span className="text-xs mt-1">Dashboard</span>
       </NavLink>
       
       <NavLink 
         to="/competitors" 
         className={({ isActive }) => 
-          `flex flex-col items-center py-3 px-2 ${
+          `flex flex-col items-center py-2 px-2 ${
             isActive ? 'text-primary' : 'text-muted-foreground'
           }`
         }
       >
-        <Users className="h-6 w-6" />
+        <Users className="h-5 w-5" />
         <span className="text-xs mt-1">Competitors</span>
       </NavLink>
       
       <NavLink 
         to="/clone" 
         className={({ isActive }) => 
-          `flex flex-col items-center py-3 px-2 ${
+          `flex flex-col items-center py-2 px-2 ${
             isActive ? 'text-primary' : 'text-muted-foreground'
           }`
         }
       >
-        <ClipboardIcon className="h-6 w-6" />
+        <ClipboardIcon className="h-5 w-5" />
         <span className="text-xs mt-1">Clone</span>
       </NavLink>
       
       <NavLink 
         to="/scripts" 
         className={({ isActive }) => 
-          `flex flex-col items-center py-3 px-2 ${
+          `flex flex-col items-center py-2 px-2 ${
             isActive ? 'text-primary' : 'text-muted-foreground'
           }`
         }
       >
-        <Code className="h-6 w-6" />
+        <Code className="h-5 w-5" />
         <span className="text-xs mt-1">Scripts</span>
       </NavLink>
     </nav>

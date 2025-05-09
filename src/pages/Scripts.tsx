@@ -1,9 +1,9 @@
 
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { ExternalLink, Trash2 } from 'lucide-react';
+import { ExternalLink, Trash2, Clipboard, Download, Save } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '../integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
@@ -25,6 +25,32 @@ const Scripts: React.FC = () => {
   useEffect(() => {
     fetchScripts();
   }, []);
+
+  // Handle copy to clipboard
+    const handleCopyScript = () => {
+      if (!generatedScript) return;
+      
+      navigator.clipboard.writeText(generatedScript)
+        .then(() => toast.success("Copied to clipboard"))
+        .catch(() => toast.error("Failed to copy to clipboard"));
+    };
+    
+    // Handle download script
+    const handleDownloadScript = () => {
+      if (!generatedScript) return;
+      
+      const blob = new Blob([generatedScript], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `script-${selectedVideo}-${new Date().toISOString().split('T')[0]}.md`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
+      toast.success("Script downloaded");
+    };
   
   const fetchScripts = async () => {
     setIsLoading(true);
@@ -119,23 +145,30 @@ const Scripts: React.FC = () => {
   }
   
   return (
-    <div className="space-y-6 pb-20 md:pb-0">
+    <div className="space-y-6 pb-20 md:pb-0 px-2">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Saved Scripts</h1>
+        <h1 className="text-xl font-bold">Saved Scripts</h1>
       </div>
       
       {scripts.length > 0 ? (
-        <ScrollArea className="h-[calc(100vh-300px)]">
+        
           <div className="space-y-4">
             {scripts.map(script => (
               <Card key={script.id}>
-                <CardHeader className="pb-2">
+                <CardHeader className="pb-2 border-b p-4 flex-row justify-between align-center">
+                  <div>
                   <div className="flex justify-between">
                     <div>
-                      <CardTitle className="text-lg">{script.video_title}</CardTitle>
-                      <p className="text-xs text-muted-foreground">{script.channel_title}</p>
+                      <CardTitle className="text-md">{script.video_title}</CardTitle>
+                      <p className="text-xs text-muted-foreground pt-1">{script.channel_title}</p>
                     </div>
-                    <div className="flex space-x-1">
+                    
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Saved: {new Date(script.created_at).toLocaleDateString()}
+                  </p>
+                  </div>
+                  <div className="flex">
                       <Button 
                         variant="ghost" 
                         size="icon" 
@@ -153,19 +186,35 @@ const Scripts: React.FC = () => {
                         <Trash2 className="h-4 w-4" />
                         <span className="sr-only">Delete</span>
                       </Button>
-                    </div>
                   </div>
-                  <p className="text-xs text-muted-foreground">
-                    Saved: {new Date(script.created_at).toLocaleDateString()}
-                  </p>
                 </CardHeader>
-                <CardContent>
-                  <p className="whitespace-pre-wrap">{script.content}</p>
+                <ScrollArea className="h-[calc(100vh-80vh)]">
+                <CardContent className="py-2 px-4">
+                  <p className="whitespace-pre-wrap text-xs">{script.content}</p>
                 </CardContent>
+                </ScrollArea>
+              <CardFooter className="border-t gap-2 flex-wrap sm:flex-nowrap p-4">
+                <Button 
+                  variant="outline" 
+                  className="flex-1"
+                  onClick={handleCopyScript}
+                >
+                  <Clipboard className="mr-2 h-4 w-4" />
+                  Copy
+                </Button>
+                <Button 
+                  variant="default" 
+                  className="flex-1"
+                  onClick={handleDownloadScript}
+                >
+                  <Download className="mr-2 h-4 w-4" />
+                  Download
+                </Button>
+              </CardFooter>     
               </Card>
             ))}
           </div>
-        </ScrollArea>
+        
       ) : (
         <Card>
           <CardContent className="py-10 text-center">

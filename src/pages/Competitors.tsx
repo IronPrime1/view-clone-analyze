@@ -52,17 +52,16 @@ const Competitors: React.FC = () => {
   };
   
   return (
-    <div className="space-y-6 pb-20 md:pb-0">
+    <div className="space-y-6 px-2">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Competitors</h1>
+        <h1 className="text-xl font-bold">Competitors</h1>
         
         <div className="flex gap-2">
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
-              <Button>
-                <PlusCircle className="h-4 w-4 mr-2" />
+              <Button className="h-8 w-10">
+                <PlusCircle className="h-4 w-4" />
                 <span className="hidden sm:inline">Add Competitor</span>
-                <span className="sm:hidden">Add</span>
               </Button>
             </DialogTrigger>
             <DialogContent>
@@ -88,10 +87,9 @@ const Competitors: React.FC = () => {
             </DialogContent>
           </Dialog>
           
-          <Button variant="outline" onClick={refreshData} disabled={isLoading} className="whitespace-nowrap">
-            <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+          <Button variant="outline" onClick={refreshData} disabled={isLoading} className="whitespace-nowrap h-8 w-10">
+            <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
             <span className="hidden sm:inline">Refresh Data</span>
-            <span className="sm:hidden">Refresh</span>
           </Button>
         </div>
       </div>
@@ -110,7 +108,7 @@ const Competitors: React.FC = () => {
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-6">
+        <div className="space-y-4">
           {competitors.map(competitor => (
             <Collapsible
               key={competitor.id}
@@ -118,27 +116,27 @@ const Competitors: React.FC = () => {
               onOpenChange={() => toggleCompetitor(competitor.id)}
             >
               <Card className="shadow-sm">
-                <CardHeader>
+                <CardHeader className="px-4 py-3">
                   <div className="flex items-center justify-between">
                     <CollapsibleTrigger asChild>
-                      <div className="flex items-center gap-3 cursor-pointer w-full">
+                      <div className="flex items-center gap-4 cursor-pointer w-full">
                         <img 
                           src={competitor.thumbnail} 
                           alt={competitor.title}
                           className="w-12 h-12 rounded-full"
                         />
-                        <div>
-                          <CardTitle className="flex items-center">
+                        <div className="flex-1">
+                          <CardTitle className="flex items-center text-base sm:text-lg">
                             {competitor.title}
-                            <ChevronDown className={`ml-2 h-4 w-4 transition-transform ${openCompetitors[competitor.id] ? 'transform rotate-180' : ''}`}/>
+                            <ChevronDown className={`ml-2 h-4 w-4 transition-transform ${openCompetitors[competitor.id] ? 'rotate-180' : ''}`} />
                           </CardTitle>
                           <CardDescription>
-                            {competitor.subscriberCount.toLocaleString()} subscribers • {competitor.videoCount.toLocaleString()} videos
+                            {competitor.subscriberCount.toLocaleString()} subscribers
                           </CardDescription>
                         </div>
                       </div>
                     </CollapsibleTrigger>
-                    
+
                     <Button 
                       variant="ghost" 
                       size="icon" 
@@ -153,59 +151,58 @@ const Competitors: React.FC = () => {
                     </Button>
                   </div>
                 </CardHeader>
-                
+
                 <CollapsibleContent>
-                  <CardContent>
-                    <ScrollArea className="max-h-[400px]">
-                      <div className="space-y-4">
-                        {competitor.videos?.map(video => (
-                          <div 
-                            key={video.id} 
-                            className="flex gap-4 pb-4 border-b cursor-pointer hover:bg-muted/50 p-2 rounded-md transition-colors"
-                            onClick={() => openYoutubeVideo(video.id)}
-                          >
-                            <div className="flex-shrink-0 w-32 h-18 relative">
-                              <img 
-                                src={video.thumbnail} 
-                                alt={video.title}
-                                className="w-full h-full object-cover rounded-md"
-                              />
-                              {video.isShort && (
-                                <Badge className="absolute bottom-1 left-1 bg-youtube-red text-white">
-                                  Short
-                                </Badge>
-                              )}
+                  <CardContent className="max-h-[60vh] overflow-y-auto pt-4 px-4 pb-4 border-t border-gray-300">
+                    <div className="space-y-4">
+                      {competitor.videos?.map(video => (
+                        <div 
+                          key={video.id} 
+                          className="flex gap-4 pb-2 border-b cursor-pointer hover:bg-muted/50 p-0 rounded-md transition-colors"
+                          onClick={() => openYoutubeVideo(video.id)}
+                        >
+                          <div className="flex-shrink-0 w-20 h-14 relative">
+                            <img 
+                              src={video.thumbnail} 
+                              alt={video.title}
+                              className="w-full h-full object-cover rounded-md"
+                            />
+                            {video.isShort && (
+                              <Badge className="absolute bottom-1 left-1 bg-youtube-red text-white">
+                                Short
+                              </Badge>
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-start justify-between">
+                              <h3 className="font-medium line-clamp-2">{video.title}</h3>
+                              <ExternalLink className="h-4 w-4 flex-shrink-0 ml-2 text-muted-foreground" />
                             </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-start justify-between">
-                                <h3 className="font-medium line-clamp-2">{video.title}</h3>
-                                <ExternalLink className="h-4 w-4 flex-shrink-0 ml-2 text-muted-foreground" />
-                              </div>
-                              <div className="flex flex-wrap items-center gap-3 mt-2 text-sm text-muted-foreground">
-                                <span className="flex items-center gap-1">
-                                  <Eye className="h-3 w-3" />
-                                  {video.viewCount.toLocaleString()}
-                                </span>
-                                <span className="flex items-center gap-1">
-                                  <ThumbsUp className="h-3 w-3" />
-                                  {video.likeCount.toLocaleString()}
-                                </span>
-                                <span className="flex items-center gap-1">
-                                  <MessageSquare className="h-3 w-3" />
-                                  {video.commentCount.toLocaleString()}
-                                </span>
-                              </div>
+                            <div className="flex flex-wrap items-center gap-3 mt-2 text-sm text-muted-foreground">
+                              <span className="flex items-center gap-1">
+                                <Eye className="h-3 w-3" />
+                                {video.viewCount.toLocaleString()}
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <ThumbsUp className="h-3 w-3" />
+                                {video.likeCount.toLocaleString()}
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <MessageSquare className="h-3 w-3" />
+                                {video.commentCount.toLocaleString()}
+                              </span>
                             </div>
                           </div>
-                        ))}
-                      </div>
-                    </ScrollArea>
+                        </div>
+                      ))}
+                    </div>
                   </CardContent>
                 </CollapsibleContent>
               </Card>
             </Collapsible>
           ))}
         </div>
+
       )}
     </div>
   );

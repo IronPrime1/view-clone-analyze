@@ -137,19 +137,19 @@ const Clone: React.FC = () => {
   };
   
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Clone Competitor Videos</h1>
+    <div className="space-y-5 px-2">
+      <h1 className="text-xl font-bold">Clone Competitor Videos</h1>
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-1 space-y-6">
+        <div className="lg:col-span-1 space-y-4">
           <Card>
-            <CardHeader>
-              <CardTitle>Select Content</CardTitle>
+            <CardHeader className="pt-3 sm:pt-4 mt-0">
+              <CardTitle className="text-xl">Select Content</CardTitle>
               <CardDescription>
                 Choose a competitor and video to clone
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-2">
               <div className="space-y-2">
                 <Label htmlFor="competitor">Competitor Channel</Label>
                 <Select
@@ -194,7 +194,7 @@ const Clone: React.FC = () => {
               </div>
               
               {selectedVideo && getVideoById(selectedVideo) && (
-                <div className="mt-4">
+                <div className="pt-2">
                   <div className="relative aspect-video rounded-lg overflow-hidden">
                     <img 
                       src={getVideoById(selectedVideo)?.thumbnail} 
@@ -202,26 +202,13 @@ const Clone: React.FC = () => {
                       className="w-full h-full object-cover"
                     />
                   </div>
-                  <h3 className="mt-2 font-medium">{getVideoById(selectedVideo)?.title}</h3>
-                  <p className="text-sm text-muted-foreground mt-1">
+                  <h3 className="mt-2 font-medium text-center">{getVideoById(selectedVideo)?.title}</h3>
+                  <p className="text-sm text-muted-foreground text-center">
                     {getVideoById(selectedVideo)?.viewCount.toLocaleString()} views
                   </p>
                 </div>
               )}
               
-              <div className="space-y-2 pt-4 border-t">
-                <Label htmlFor="user-video">Your Video (Optional)</Label>
-                <Textarea
-                  id="user-video"
-                  placeholder="Paste your YouTube video URL here"
-                  value={userVideoUrl}
-                  onChange={(e) => setUserVideoUrl(e.target.value)}
-                  className="h-20"
-                />
-                <p className="text-xs text-muted-foreground">
-                  If provided, the script will incorporate elements from your video
-                </p>
-              </div>
             </CardContent>
             <CardFooter>
               <Button 
@@ -247,19 +234,19 @@ const Clone: React.FC = () => {
         
         <div className="lg:col-span-2">
           <Card className="h-full flex flex-col">
-            <CardHeader>
-              <CardTitle>Generated Script</CardTitle>
+            <CardHeader className="sm:pt-4 pt-3 mt-0 mb-0 pb-4 border-b">
+              <CardTitle className="text-xl pt-0 mt-0">Generated Script</CardTitle>
               <CardDescription>
                 A customized script based on the competitor's content
               </CardDescription>
             </CardHeader>
             <CardContent className="flex-1 overflow-auto">
               {generatedScript ? (
-                <div className="font-mono text-sm whitespace-pre-wrap bg-muted p-4 rounded-md h-[500px] overflow-y-auto">
+                <div className="font-mono text-sm rounded-md h-[300px] sm:h-[400px]overflow-y-auto whitespace-pre-wrap pt-2">
                   {generatedScript}
                 </div>
               ) : (
-                <div className="flex items-center justify-center h-[500px] border-2 border-dashed rounded-md">
+                <div className="flex items-center justify-center h-[200px] sm:h-[440px] border-2 border-dashed rounded-md">
                   <div className="text-center">
                     <Wand2 className="h-8 w-8 mx-auto text-muted-foreground" />
                     <p className="mt-2 text-muted-foreground">
