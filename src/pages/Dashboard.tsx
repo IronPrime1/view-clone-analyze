@@ -6,9 +6,15 @@ import { Button } from '../components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from '../components/ui/dialog';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
-import { PlusCircle, RefreshCw, Youtube, User } from 'lucide-react';
+import { PlusCircle, RefreshCw, Youtube, User, Menu } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { toast } from 'sonner';
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuTrigger 
+} from '@/components/ui/dropdown-menu';
 
 const Dashboard: React.FC = () => {
   const { ownChannel, competitors, viewsData, addCompetitor, refreshData, isLoading, login } = useYoutube();
@@ -89,7 +95,8 @@ const Dashboard: React.FC = () => {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Dashboard</h1>
         
-        <div className="flex gap-2">
+        {/* Desktop actions */}
+        <div className="hidden md:flex gap-2">
           {!ownChannel && (
             <Button onClick={handleConnectYoutube} className="bg-youtube-red hover:bg-youtube-red/90">
               <Youtube className="h-4 w-4 mr-2" />
@@ -131,6 +138,33 @@ const Dashboard: React.FC = () => {
             <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
             Refresh Data
           </Button>
+        </div>
+        
+        {/* Mobile dropdown menu */}
+        <div className="md:hidden">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="icon">
+                <Menu className="h-5 w-5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {!ownChannel && (
+                <DropdownMenuItem onClick={handleConnectYoutube}>
+                  <Youtube className="h-4 w-4 mr-2 text-youtube-red" />
+                  <span>Add Your Channel</span>
+                </DropdownMenuItem>
+              )}
+              <DropdownMenuItem onClick={() => setDialogOpen(true)}>
+                <PlusCircle className="h-4 w-4 mr-2" />
+                <span>Add Competitor</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={refreshData} disabled={isLoading}>
+                <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+                <span>Refresh Data</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
       

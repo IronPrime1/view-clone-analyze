@@ -12,6 +12,8 @@ const YoutubeAuth: React.FC = () => {
   
   const handleConnect = async () => {
     try {
+      // Make sure we have a clean URL before the redirect
+      window.history.replaceState({}, document.title, window.location.pathname);
       await login();
       // The login function now redirects to Google OAuth
     } catch (error) {

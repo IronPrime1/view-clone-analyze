@@ -58,6 +58,10 @@ const Auth = () => {
           // Clear the pending auth flag
           localStorage.removeItem('pendingYoutubeAuth');
           
+          // Remove any query parameters from the URL to prevent "page not found" issues
+          // This modification helps clean up the URL before processing the auth
+          window.history.replaceState({}, document.title, '/auth');
+          
           // Call our edge function to exchange the code for tokens
           const { data, error } = await supabase.functions.invoke('youtube-auth', {
             body: {
@@ -73,12 +77,13 @@ const Auth = () => {
           }
           
           toast.success("YouTube channel connected successfully");
-          navigate('/');
+          // Use replace to avoid back-button issues
+          navigate('/', { replace: true });
           
         } catch (error: any) {
           console.error("YouTube auth error:", error);
           toast.error(error.message || "Failed to connect YouTube channel");
-          navigate('/');
+          navigate('/', { replace: true });
         } finally {
           setProcessingOAuth(false);
         }
