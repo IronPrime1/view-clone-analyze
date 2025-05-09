@@ -317,7 +317,7 @@ export const YoutubeProvider: React.FC<{children: React.ReactNode}> = ({ childre
     
     try {
       // Real Google OAuth URL setup
-      const clientId = "629017410456-o7oj41ahdjetb0nkb96vfhddj6uv8g7t.apps.googleusercontent.com";
+      const clientId = "644837971605-h68hhakik9r3mntrjhtv23fa1m07341s.apps.googleusercontent.com";
       const redirectUri = `${window.location.origin}/auth`;
       const scope = "https://www.googleapis.com/auth/youtube.readonly";
       const responseType = "code";
