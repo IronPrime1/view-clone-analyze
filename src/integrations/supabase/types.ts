@@ -139,28 +139,46 @@ export type Database = {
           created_at: string | null
           id: string
           updated_at: string | null
+          youtube_channel_id: string | null
+          youtube_channel_thumbnail: string | null
+          youtube_channel_title: string | null
           youtube_connected: boolean | null
           youtube_refresh_token: string | null
+          youtube_subscriber_count: number | null
           youtube_token: string | null
           youtube_token_expiry: string | null
+          youtube_video_count: number | null
+          youtube_view_count: number | null
         }
         Insert: {
           created_at?: string | null
           id: string
           updated_at?: string | null
+          youtube_channel_id?: string | null
+          youtube_channel_thumbnail?: string | null
+          youtube_channel_title?: string | null
           youtube_connected?: boolean | null
           youtube_refresh_token?: string | null
+          youtube_subscriber_count?: number | null
           youtube_token?: string | null
           youtube_token_expiry?: string | null
+          youtube_video_count?: number | null
+          youtube_view_count?: number | null
         }
         Update: {
           created_at?: string | null
           id?: string
           updated_at?: string | null
+          youtube_channel_id?: string | null
+          youtube_channel_thumbnail?: string | null
+          youtube_channel_title?: string | null
           youtube_connected?: boolean | null
           youtube_refresh_token?: string | null
+          youtube_subscriber_count?: number | null
           youtube_token?: string | null
           youtube_token_expiry?: string | null
+          youtube_video_count?: number | null
+          youtube_view_count?: number | null
         }
         Relationships: []
       }

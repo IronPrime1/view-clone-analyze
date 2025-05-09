@@ -8,7 +8,7 @@ import Layout from "./components/layout/Layout";
 import Dashboard from "./pages/Dashboard";
 import Competitors from "./pages/Competitors";
 import Clone from "./pages/Clone";
-import Analyze from "./pages/Analyze";
+import Scripts from "./pages/Analyze";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import { YoutubeProvider } from "./contexts/YoutubeContext";
@@ -31,7 +31,7 @@ const App = () => (
               <Route index element={<Dashboard />} />
               <Route path="competitors" element={<Competitors />} />
               <Route path="clone" element={<Clone />} />
-              <Route path="analyze" element={<Analyze />} />
+              <Route path="scripts" element={<Scripts />} />
               <Route path="*" element={<NotFound />} />
             </Route>
           </Routes>

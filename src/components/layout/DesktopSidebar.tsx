@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Users, Clipboard, BarChart, LogOut, Youtube } from 'lucide-react';
+import { LayoutDashboard, Users, Clipboard, Code, LogOut, Youtube } from 'lucide-react';
 import { useYoutube } from '../../contexts/YoutubeContext';
 import { Button } from '../ui/button';
 
@@ -9,7 +9,7 @@ const DesktopSidebar: React.FC = () => {
   const { isAuthenticated, ownChannel, logout } = useYoutube();
 
   return (
-    <div className="desktop-nav w-64 bg-sidebar text-sidebar-foreground flex-shrink-0">
+    <div className="desktop-nav w-64 bg-sidebar text-sidebar-foreground flex-shrink-0 hidden md:block">
       <div className="flex flex-col h-full">
         <div className="p-4 border-b border-sidebar-border">
           <div className="flex items-center gap-2">
@@ -83,7 +83,7 @@ const DesktopSidebar: React.FC = () => {
             </li>
             <li>
               <NavLink 
-                to="/analyze" 
+                to="/scripts" 
                 className={({ isActive }) => 
                   `flex items-center gap-3 p-3 rounded-md transition-colors ${
                     isActive 
@@ -92,8 +92,8 @@ const DesktopSidebar: React.FC = () => {
                   }`
                 }
               >
-                <BarChart className="h-5 w-5" />
-                <span>Analyze</span>
+                <Code className="h-5 w-5" />
+                <span>Scripts</span>
               </NavLink>
             </li>
           </ul>

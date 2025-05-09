@@ -1,11 +1,11 @@
 
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Users, Clipboard, BarChart } from 'lucide-react';
+import { LayoutDashboard, Users, Clipboard, Code } from 'lucide-react';
 
 const MobileNavigation: React.FC = () => {
   return (
-    <nav className="mobile-nav">
+    <nav className="mobile-nav fixed bottom-0 left-0 right-0 bg-background border-t flex justify-around items-center px-2 md:hidden z-10">
       <NavLink 
         to="/" 
         className={({ isActive }) => 
@@ -44,15 +44,15 @@ const MobileNavigation: React.FC = () => {
       </NavLink>
       
       <NavLink 
-        to="/analyze" 
+        to="/scripts" 
         className={({ isActive }) => 
           `flex flex-col items-center py-3 px-2 ${
             isActive ? 'text-primary' : 'text-muted-foreground'
           }`
         }
       >
-        <BarChart className="h-6 w-6" />
-        <span className="text-xs mt-1">Analyze</span>
+        <Code className="h-6 w-6" />
+        <span className="text-xs mt-1">Scripts</span>
       </NavLink>
     </nav>
   );

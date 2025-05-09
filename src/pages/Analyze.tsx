@@ -4,13 +4,13 @@ import { useYoutube } from '../contexts/YoutubeContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../components/ui/accordion';
-import { Clipboard, Eye, MessageSquare, ThumbsUp, Clock } from 'lucide-react';
+import { Clipboard, Eye, MessageSquare, ThumbsUp, Clock, ExternalLink } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { toast } from '../components/ui/sonner';
 import { ScrollArea } from '../components/ui/scroll-area';
 import { Badge } from '../components/ui/badge';
 
-const Analyze: React.FC = () => {
+const Scripts: React.FC = () => {
   const { competitors, getSavedScripts } = useYoutube();
 
   // Find all competitors that have videos with saved scripts
@@ -23,6 +23,10 @@ const Analyze: React.FC = () => {
   const handleCopyScript = (content: string) => {
     navigator.clipboard.writeText(content);
     toast.success('Script copied to clipboard');
+  };
+
+  const openYoutubeVideo = (videoId: string) => {
+    window.open(`https://www.youtube.com/watch?v=${videoId}`, '_blank');
   };
 
   // Format date string
@@ -38,15 +42,15 @@ const Analyze: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-20 md:pb-0">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Analyze</h1>
+        <h1 className="text-2xl font-bold">Scripts</h1>
       </div>
 
       {competitorsWithScripts.length === 0 ? (
         <Card className="shadow-sm">
           <CardContent className="py-8 flex flex-col items-center justify-center">
-            <h3 className="text-lg font-medium mb-2">No saved analyses yet</h3>
+            <h3 className="text-lg font-medium mb-2">No saved scripts yet</h3>
             <p className="text-muted-foreground text-center">
               Go to the Clone tab to analyze competitors' videos and save scripts
             </p>
@@ -75,12 +79,23 @@ const Analyze: React.FC = () => {
                 <Card key={video.id} className="shadow-sm">
                   <CardHeader>
                     <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-                      <div className="flex-shrink-0 w-full sm:w-32 h-18">
+                      <div 
+                        className="flex-shrink-0 w-full sm:w-32 h-18 cursor-pointer relative"
+                        onClick={() => openYoutubeVideo(video.id)}
+                      >
                         <img 
                           src={video.thumbnail} 
                           alt={video.title}
                           className="w-full h-full object-cover rounded-md"
                         />
+                        <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 bg-black/30 transition-opacity rounded-md">
+                          <ExternalLink className="w-6 h-6 text-white" />
+                        </div>
+                        {video.isShort && (
+                          <Badge className="absolute bottom-1 left-1 bg-youtube-red text-white">
+                            Short
+                          </Badge>
+                        )}
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
@@ -115,7 +130,7 @@ const Analyze: React.FC = () => {
                         <AccordionItem key={script.id} value={script.id}>
                           <AccordionTrigger className="text-base font-medium">
                             <div className="flex items-center justify-between w-full">
-                              <span>Analysis {index + 1}</span>
+                              <span>Script {index + 1}</span>
                               <span className="text-xs font-normal text-muted-foreground flex items-center gap-1">
                                 <Clock className="h-3 w-3" />
                                 {formatDate(script.createdAt)}
@@ -154,4 +169,4 @@ const Analyze: React.FC = () => {
   );
 };
 
-export default Analyze;
+export default Scripts;
