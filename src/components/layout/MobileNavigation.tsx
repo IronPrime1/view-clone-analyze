@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Users, Clipboard, Code } from 'lucide-react';
+import { LayoutDashboard, Users, Clipboard as ClipboardIcon, Code } from 'lucide-react';
 
 const MobileNavigation: React.FC = () => {
   return (
@@ -39,7 +39,7 @@ const MobileNavigation: React.FC = () => {
           }`
         }
       >
-        <Clipboard className="h-6 w-6" />
+        <ClipboardIcon className="h-6 w-6" />
         <span className="text-xs mt-1">Clone</span>
       </NavLink>
       

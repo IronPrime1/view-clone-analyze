@@ -6,7 +6,7 @@ import DesktopSidebar from './DesktopSidebar';
 import { supabase } from '../../integrations/supabase/client';
 import { useYoutube } from '../../contexts/YoutubeContext';
 import AuthRequired from '../auth/AuthRequired';
-import { Youtube, Menu } from 'lucide-react';
+import { Youtube, Menu, LayoutDashboard, Users, Clipboard as ClipboardIcon, Code } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 
@@ -113,7 +113,7 @@ const Layout: React.FC = () => {
                       onClick={() => setOpen(false)}
                     >
                       <a href="/clone">
-                        <Clipboard className="h-5 w-5 mr-3" />
+                        <ClipboardIcon className="h-5 w-5 mr-3" />
                         Clone
                       </a>
                     </Button>

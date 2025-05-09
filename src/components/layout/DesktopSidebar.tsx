@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Users, Clipboard, Code, LogOut, Youtube } from 'lucide-react';
+import { LayoutDashboard, Users, Clipboard as ClipboardIcon, Code, LogOut, Youtube } from 'lucide-react';
 import { useYoutube } from '../../contexts/YoutubeContext';
 import { Button } from '../ui/button';
 
@@ -77,7 +77,7 @@ const DesktopSidebar: React.FC = () => {
                   }`
                 }
               >
-                <Clipboard className="h-5 w-5" />
+                <ClipboardIcon className="h-5 w-5" />
                 <span>Clone</span>
               </NavLink>
             </li>

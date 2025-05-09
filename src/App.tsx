@@ -8,7 +8,7 @@ import Layout from "./components/layout/Layout";
 import Dashboard from "./pages/Dashboard";
 import Competitors from "./pages/Competitors";
 import Clone from "./pages/Clone";
-import Scripts from "./pages/Analyze";
+import Scripts from "./pages/Scripts";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import { YoutubeProvider } from "./contexts/YoutubeContext";
