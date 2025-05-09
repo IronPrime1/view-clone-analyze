@@ -43,10 +43,10 @@ const Competitors: React.FC = () => {
                 <DialogTitle>Add Competitor Channel</DialogTitle>
               </DialogHeader>
               <div className="py-4">
-                <Label htmlFor="channel-url">Channel URL or ID</Label>
+                <Label htmlFor="channel-url">Channel ID</Label>
                 <Input
                   id="channel-url"
-                  placeholder="https://youtube.com/c/channel or channel ID"
+                  placeholder="channel ID"
                   value={channelInput}
                   onChange={(e) => setChannelInput(e.target.value)}
                   className="mt-2"
