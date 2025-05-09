@@ -305,31 +305,6 @@ export const YoutubeProvider: React.FC<{children: React.ReactNode}> = ({ childre
         });
       });
       
-      // If we don't have real data yet, add some mock data
-      if (Object.keys(views).length === 0) {
-        const dates = Array.from({length: 7}, (_, i) => {
-          const d = new Date();
-          d.setDate(d.getDate() - (6 - i));
-          return d.toISOString().split('T')[0];
-        });
-        
-        // Mock data for own channel
-        if (ownChannel) {
-          views[ownChannel.id] = dates.map(date => ({
-            date,
-            views: Math.floor(Math.random() * 1000) + 500
-          }));
-        }
-        
-        // Mock data for competitors
-        competitors.forEach(comp => {
-          views[comp.id] = dates.map(date => ({
-            date,
-            views: Math.floor(Math.random() * 800) + 300
-          }));
-        });
-      }
-      
       setViewsData(views);
     } catch (error) {
       console.error("Error loading views data:", error);
@@ -341,8 +316,8 @@ export const YoutubeProvider: React.FC<{children: React.ReactNode}> = ({ childre
     setIsLoading(true);
     
     try {
-      // Google OAuth URL setup
-      const clientId = "YOUR_CLIENT_ID"; // This would be replaced with your real client ID
+      // Real Google OAuth URL setup
+      const clientId = "629017410456-o7oj41ahdjetb0nkb96vfhddj6uv8g7t.apps.googleusercontent.com";
       const redirectUri = `${window.location.origin}/auth`;
       const scope = "https://www.googleapis.com/auth/youtube.readonly";
       const responseType = "code";
@@ -352,27 +327,11 @@ export const YoutubeProvider: React.FC<{children: React.ReactNode}> = ({ childre
       // Build authorization URL
       const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scope)}&response_type=${responseType}&access_type=${accessType}&prompt=${prompt}`;
       
-      // For now, we'll simulate success with toast messages since we don't have a working OAuth flow
-      toast.info("Connecting to YouTube...");
+      // Save auth state in localStorage for when the user returns from OAuth
+      localStorage.setItem('pendingYoutubeAuth', 'true');
       
-      // In a real app, we'd redirect to Google's OAuth page
-      // window.location.href = authUrl;
-      
-      // Simulate successful YouTube auth
-      setTimeout(() => {
-        setIsAuthenticated(true);
-        loadOwnChannel({
-          youtube_connected: true,
-          youtube_channel_id: "UC_x5XG1OV2P6uZZ5FSM9Ttw",
-          youtube_channel_title: "Your YouTube Channel",
-          youtube_subscriber_count: 5480,
-          youtube_view_count: 286400,
-          youtube_video_count: 42,
-          youtube_channel_thumbnail: "https://i.pravatar.cc/150?u=yourChannel"
-        });
-        toast.success("Successfully connected to YouTube");
-        setIsLoading(false);
-      }, 1500);
+      // Redirect to Google's OAuth page
+      window.location.href = authUrl;
       
     } catch (error) {
       console.error("Login error:", error);
@@ -517,9 +476,30 @@ export const YoutubeProvider: React.FC<{children: React.ReactNode}> = ({ childre
     setIsLoading(true);
     
     try {
-      // In a real app, we would call YouTube API again
+      // Call edge function to refresh data
+      const { data, error } = await supabase.functions.invoke('youtube-fetch', {
+        body: {
+          action: 'refresh_data'
+        }
+      });
+      
+      if (error) throw error;
+      
       await loadCompetitors();
       await loadViewsData();
+      
+      if (ownChannel) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', (await supabase.auth.getUser()).data.user?.id || '')
+          .single();
+          
+        if (profile) {
+          await loadOwnChannel(profile);
+        }
+      }
+      
       toast.success("Data refreshed successfully");
     } catch (error) {
       console.error("Error refreshing data:", error);

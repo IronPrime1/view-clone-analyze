@@ -6,7 +6,7 @@ import { Button } from '../components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from '../components/ui/dialog';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
-import { PlusCircle, RefreshCw, Youtube } from 'lucide-react';
+import { PlusCircle, RefreshCw, Youtube, User } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { toast } from 'sonner';
 
@@ -22,10 +22,14 @@ const Dashboard: React.FC = () => {
       return [];
     }
     
-    // Get all dates from own channel
-    const dates = ownChannel && viewsData[ownChannel.id] 
-      ? viewsData[ownChannel.id].map(d => d.date)
-      : [];
+    // Get all dates from own channel or first competitor
+    const dateSource = ownChannel && viewsData[ownChannel.id] 
+      ? viewsData[ownChannel.id]
+      : competitors.length > 0 && viewsData[competitors[0].id]
+        ? viewsData[competitors[0].id]
+        : [];
+        
+    const dates = dateSource.map(d => d.date);
       
     if (dates.length === 0) {
       return [];
@@ -77,7 +81,6 @@ const Dashboard: React.FC = () => {
   
   const handleConnectYoutube = () => {
     login()
-      .then(() => toast.success("YouTube channel connected successfully"))
       .catch(err => toast.error("Failed to connect YouTube channel"));
   };
   
@@ -204,7 +207,7 @@ const Dashboard: React.FC = () => {
                   />
                 ) : (
                   <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white">
-                    {ownChannel.title?.charAt(0) || 'Y'}
+                    <User className="h-4 w-4" />
                   </div>
                 )}
                 <span className="truncate">{ownChannel.title || 'Your Channel'}</span>

@@ -5,9 +5,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
-import { Navigate } from 'react-router-dom';
-import { toast } from '@/components/ui/sonner';
-import { Youtube, Mail, Lock } from 'lucide-react';
+import { Navigate, useNavigate, useLocation } from 'react-router-dom';
+import { toast } from 'sonner';
+import { Youtube, Mail, Lock, Loader2 } from 'lucide-react';
 
 const Auth = () => {
   const [email, setEmail] = useState('');
@@ -15,6 +15,10 @@ const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [loading, setLoading] = useState(false);
   const [session, setSession] = useState<any>(null);
+  const [processingOAuth, setProcessingOAuth] = useState(false);
+  
+  const location = useLocation();
+  const navigate = useNavigate();
   
   useEffect(() => {
     const checkSession = async () => {
@@ -30,6 +34,59 @@ const Auth = () => {
     
     return () => subscription.unsubscribe();
   }, []);
+  
+  // Handle YouTube OAuth callback
+  useEffect(() => {
+    const processYoutubeAuth = async () => {
+      // Check if we have a code in the URL (OAuth callback)
+      const params = new URLSearchParams(location.search);
+      const code = params.get('code');
+      
+      // Check if we're expecting a YouTube auth callback
+      const pendingYoutubeAuth = localStorage.getItem('pendingYoutubeAuth');
+      
+      if (code && pendingYoutubeAuth === 'true') {
+        setProcessingOAuth(true);
+        try {
+          // Get the current user's auth token
+          const { data: sessionData } = await supabase.auth.getSession();
+          
+          if (!sessionData.session) {
+            throw new Error("You must be logged in to connect your YouTube channel");
+          }
+          
+          // Clear the pending auth flag
+          localStorage.removeItem('pendingYoutubeAuth');
+          
+          // Call our edge function to exchange the code for tokens
+          const { data, error } = await supabase.functions.invoke('youtube-auth', {
+            body: {
+              code,
+              redirectUri: `${window.location.origin}/auth`
+            }
+          });
+          
+          if (error) throw new Error(error.message);
+          
+          if (!data.success) {
+            throw new Error(data.error || "Failed to connect YouTube channel");
+          }
+          
+          toast.success("YouTube channel connected successfully");
+          navigate('/');
+          
+        } catch (error: any) {
+          console.error("YouTube auth error:", error);
+          toast.error(error.message || "Failed to connect YouTube channel");
+          navigate('/');
+        } finally {
+          setProcessingOAuth(false);
+        }
+      }
+    };
+    
+    processYoutubeAuth();
+  }, [location, navigate]);
   
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -88,6 +145,28 @@ const Auth = () => {
       }
     });
   };
+  
+  // If processing OAuth, show loading screen
+  if (processingOAuth) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-b from-background to-secondary/20">
+        <Card className="w-full max-w-md">
+          <CardHeader className="text-center">
+            <CardTitle className="flex items-center justify-center gap-2">
+              <Youtube className="h-8 w-8 text-youtube-red" />
+              <span>Connecting YouTube</span>
+            </CardTitle>
+            <CardDescription>
+              Please wait while we connect your YouTube account...
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex justify-center py-8">
+            <Loader2 className="h-12 w-12 animate-spin text-youtube-red" />
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
   
   // If already authenticated, redirect to dashboard
   if (session) {
@@ -162,7 +241,7 @@ const Auth = () => {
               >
                 {loading ? (
                   <>
-                    <div className="mr-2 h-4 w-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin"></div>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     {isLogin ? "Logging in..." : "Creating account..."}
                   </>
                 ) : (

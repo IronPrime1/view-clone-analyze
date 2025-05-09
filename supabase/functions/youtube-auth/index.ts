@@ -42,18 +42,19 @@ serve(async (req) => {
     );
     
     // Exchange the authorization code for tokens
-    const clientId = Deno.env.get("YOUTUBE_CLIENT_ID");
-    const clientSecret = Deno.env.get("YOUTUBE_CLIENT_SECRET");
+    const clientId = "629017410456-o7oj41ahdjetb0nkb96vfhddj6uv8g7t.apps.googleusercontent.com";
+    const clientSecret = "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";
     
     const tokenUrl = "https://oauth2.googleapis.com/token";
     const tokenParams = new URLSearchParams({
       code,
-      client_id: clientId!,
-      client_secret: clientSecret!,
+      client_id: clientId,
+      client_secret: clientSecret,
       redirect_uri: redirectUri,
       grant_type: "authorization_code"
     });
     
+    console.log("Exchanging auth code for tokens...");
     const tokenResponse = await fetch(tokenUrl, {
       method: "POST",
       headers: {
@@ -67,29 +68,20 @@ serve(async (req) => {
     if (!tokenResponse.ok) {
       console.error("YouTube token error:", tokenData);
       return new Response(
-        JSON.stringify({ error: "Failed to authenticate with YouTube" }),
+        JSON.stringify({ error: "Failed to authenticate with YouTube: " + (tokenData.error_description || tokenData.error) }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
     
     const { access_token, refresh_token, expires_in } = tokenData;
     
-    // Use the provided YouTube API key
-    const youtubeApiKey = "AIzaSyDKh3CDFoL69CuW6aFxTW-u9igrootuqpk";
-    
-    // First try to get channel with access token
-    let channelResponse;
-    try {
-      channelResponse = await fetch('https://www.googleapis.com/youtube/v3/channels?part=snippet,statistics&mine=true', {
-        headers: {
-          'Authorization': `Bearer ${access_token}`
-        }
-      });
-    } catch (error) {
-      console.error("Error using access token, falling back to API key:", error);
-      // Fall back to API key if access token doesn't work
-      channelResponse = await fetch('https://www.googleapis.com/youtube/v3/channels?part=snippet,statistics&id=channel_id&key=' + youtubeApiKey);
-    }
+    // Use the access token to get the user's channel info
+    console.log("Fetching channel data with access token...");
+    const channelResponse = await fetch('https://www.googleapis.com/youtube/v3/channels?part=snippet,statistics&mine=true', {
+      headers: {
+        'Authorization': `Bearer ${access_token}`
+      }
+    });
     
     const channelData = await channelResponse.json();
     
@@ -133,6 +125,7 @@ serve(async (req) => {
     expiryTime.setSeconds(expiryTime.getSeconds() + expires_in);
     
     // Update user profile with YouTube tokens and data
+    console.log("Updating user profile with YouTube data...");
     const { error: updateError } = await supabaseAdmin
       .from('profiles')
       .update({
@@ -158,8 +151,12 @@ serve(async (req) => {
     }
     
     // Fetch videos for the channel (10 latest)
+    console.log("Fetching videos for the channel...");
     const getChannelVideos = async () => {
       try {
+        // Use the YouTube API key
+        const youtubeApiKey = "AIzaSyDKh3CDFoL69CuW6aFxTW-u9igrootuqpk";
+        
         // Get channel uploads playlist ID
         const contentDetailsResponse = await fetch(
           `https://www.googleapis.com/youtube/v3/channels?part=contentDetails&id=${channelId}&key=${youtubeApiKey}`
@@ -246,6 +243,7 @@ serve(async (req) => {
     const videos = await getChannelVideos();
     
     // Return success response
+    console.log("YouTube channel connected successfully");
     return new Response(
       JSON.stringify({
         success: true,

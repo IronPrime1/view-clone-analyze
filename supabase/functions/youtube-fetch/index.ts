@@ -141,6 +141,43 @@ async function fetchPopularVideos(channelId: string, apiKey: string) {
   }
 }
 
+// Helper to generate daily views data
+async function generateDailyViews(channelId: string, userId: string, supabaseAdmin: any) {
+  // Generate mock views data for the past 7 days
+  const dates = Array.from({length: 7}, (_, i) => {
+    const d = new Date();
+    d.setDate(d.getDate() - (6 - i));
+    return d.toISOString().split('T')[0];
+  });
+  
+  // Get current views data
+  const { data: existingData } = await supabaseAdmin
+    .from('daily_views')
+    .select('*')
+    .eq('channel_id', channelId)
+    .eq('user_id', userId);
+    
+  // If there's existing data, don't create new data
+  if (existingData && existingData.length > 0) {
+    return existingData;
+  }
+  
+  // Create new mock views data
+  const mockViews = dates.map(date => ({
+    channel_id: channelId,
+    user_id: userId,
+    date: date,
+    views: Math.floor(Math.random() * 1000) + 300
+  }));
+  
+  // Insert mock views data
+  await supabaseAdmin
+    .from('daily_views')
+    .insert(mockViews);
+    
+  return mockViews;
+}
+
 serve(async (req) => {
   // Handle CORS
   const corsResponse = await handleCors(req);
@@ -151,7 +188,7 @@ serve(async (req) => {
     const { channelId, action } = await req.json();
     
     // Get YouTube API key
-    const youtubeApiKey = Deno.env.get("YOUTUBE_API_KEY") || "AIzaSyDKh3CDFoL69CuW6aFxTW-u9igrootuqpk";
+    const youtubeApiKey = "AIzaSyDKh3CDFoL69CuW6aFxTW-u9igrootuqpk";
     
     if (!youtubeApiKey) {
       return new Response(
@@ -188,6 +225,8 @@ serve(async (req) => {
     // Handle different actions
     switch (action) {
       case 'add_competitor': {
+        console.log("Adding competitor channel:", channelId);
+        
         // Fetch channel data
         const channelData = await fetchChannelData(channelId, youtubeApiKey);
         
@@ -211,6 +250,7 @@ serve(async (req) => {
         }
         
         // Fetch popular videos for the channel
+        console.log("Fetching popular videos for the competitor channel");
         const videos = await fetchPopularVideos(channelId, youtubeApiKey);
         
         // Insert videos into database
@@ -236,27 +276,8 @@ serve(async (req) => {
             console.error("Error inserting videos:", videosError);
           }
           
-          // Generate mock daily views data
-          const dates = Array.from({length: 7}, (_, i) => {
-            const d = new Date();
-            d.setDate(d.getDate() - (6 - i));
-            return d.toISOString().split('T')[0];
-          });
-          
-          const mockViews = dates.map(date => ({
-            channel_id: channelData.id,
-            user_id: user.id,
-            date: date,
-            views: Math.floor(Math.random() * 1000) + 300
-          }));
-          
-          const { error: viewsError } = await supabaseAdmin
-            .from('daily_views')
-            .insert(mockViews);
-            
-          if (viewsError) {
-            console.error("Error inserting daily views:", viewsError);
-          }
+          // Generate daily views data
+          await generateDailyViews(channelData.id, user.id, supabaseAdmin);
         }
         
         return new Response(
@@ -275,6 +296,8 @@ serve(async (req) => {
       }
       
       case 'get_channel_data': {
+        console.log("Getting channel data for:", channelId);
+        
         // Fetch channel data
         const channelData = await fetchChannelData(channelId, youtubeApiKey);
         
@@ -288,6 +311,114 @@ serve(async (req) => {
               ...channelData,
               videos
             }
+          }),
+          { 
+            status: 200, 
+            headers: { ...corsHeaders, "Content-Type": "application/json" }
+          }
+        );
+      }
+      
+      case 'refresh_data': {
+        console.log("Refreshing data for user:", user.id);
+        
+        // Get user profile for YouTube channel ID
+        const { data: profile } = await supabaseAdmin
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+        
+        // Update own channel info if connected
+        if (profile?.youtube_connected && profile?.youtube_channel_id) {
+          try {
+            console.log("Refreshing own channel data");
+            
+            // Get fresh data for own channel
+            const channelData = await fetchChannelData(profile.youtube_channel_id, youtubeApiKey);
+            
+            // Update profile
+            await supabaseAdmin
+              .from('profiles')
+              .update({
+                youtube_channel_title: channelData.title,
+                youtube_subscriber_count: channelData.subscriberCount,
+                youtube_view_count: channelData.viewCount,
+                youtube_video_count: channelData.videoCount
+              })
+              .eq('id', user.id);
+          } catch (error) {
+            console.error("Error refreshing own channel:", error);
+          }
+        }
+        
+        // Get all competitor channels
+        const { data: competitors } = await supabaseAdmin
+          .from('competitor_channels')
+          .select('id, youtube_id')
+          .eq('user_id', user.id);
+        
+        // Update each competitor channel
+        if (competitors && competitors.length > 0) {
+          for (const comp of competitors) {
+            try {
+              console.log("Refreshing competitor channel:", comp.youtube_id);
+              
+              // Get fresh data
+              const channelData = await fetchChannelData(comp.youtube_id, youtubeApiKey);
+              
+              // Update in database
+              await supabaseAdmin
+                .from('competitor_channels')
+                .update({
+                  title: channelData.title,
+                  thumbnail: channelData.thumbnail,
+                  subscriber_count: channelData.subscriberCount,
+                  video_count: channelData.videoCount,
+                  view_count: channelData.viewCount,
+                  updated_at: new Date().toISOString()
+                })
+                .eq('id', comp.id);
+              
+              // Get fresh videos
+              const videos = await fetchPopularVideos(comp.youtube_id, youtubeApiKey);
+              
+              if (videos && videos.length > 0) {
+                // Delete old videos
+                await supabaseAdmin
+                  .from('competitor_videos')
+                  .delete()
+                  .eq('channel_id', comp.id);
+                
+                // Insert new videos
+                const videosToInsert = videos.map(video => ({
+                  channel_id: comp.id,
+                  youtube_id: video.id,
+                  title: video.title,
+                  description: video.description,
+                  published_at: video.publishedAt,
+                  thumbnail: video.thumbnail,
+                  view_count: video.viewCount,
+                  like_count: video.likeCount,
+                  comment_count: video.commentCount,
+                  is_short: video.isShort
+                }));
+                
+                await supabaseAdmin
+                  .from('competitor_videos')
+                  .insert(videosToInsert);
+              }
+            } catch (error) {
+              console.error(`Error updating competitor ${comp.youtube_id}:`, error);
+            }
+          }
+        }
+        
+        // Return success
+        return new Response(
+          JSON.stringify({
+            success: true,
+            message: "Data refreshed successfully"
           }),
           { 
             status: 200, 

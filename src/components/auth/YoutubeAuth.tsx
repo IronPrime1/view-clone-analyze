@@ -4,9 +4,20 @@ import { useYoutube } from '../../contexts/YoutubeContext';
 import { Button } from '../ui/button';
 import { Youtube } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../ui/card';
+import { useNavigate } from 'react-router-dom';
 
 const YoutubeAuth: React.FC = () => {
   const { login, isLoading } = useYoutube();
+  const navigate = useNavigate();
+  
+  const handleConnect = async () => {
+    try {
+      await login();
+      // The login function now redirects to Google OAuth
+    } catch (error) {
+      console.error("Failed to start YouTube auth:", error);
+    }
+  };
   
   return (
     <div className="max-w-md mx-auto my-8">
@@ -33,7 +44,7 @@ const YoutubeAuth: React.FC = () => {
         </CardContent>
         <CardFooter>
           <Button 
-            onClick={login} 
+            onClick={handleConnect} 
             disabled={isLoading}
             className="w-full bg-youtube-red hover:bg-youtube-red/80"
           >
