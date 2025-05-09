@@ -1,25 +1,21 @@
-
 import React, { useState } from 'react';
 import { useYoutube } from '../contexts/YoutubeContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from '../components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../components/ui/dialog';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
-import { PlusCircle, RefreshCw, Youtube, User, Menu } from 'lucide-react';
+import { PlusCircle, RefreshCw, Upload, User } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { toast } from 'sonner';
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuTrigger 
-} from '@/components/ui/dropdown-menu';
+import { useNavigate } from 'react-router-dom';
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 
 const Dashboard: React.FC = () => {
   const { ownChannel, competitors, viewsData, addCompetitor, refreshData, isLoading, login } = useYoutube();
   const [channelInput, setChannelInput] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
+  const navigate = useNavigate();
   
   // Format chart data from viewsData
   const prepareChartData = () => {
@@ -95,104 +91,94 @@ const Dashboard: React.FC = () => {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Dashboard</h1>
         
-        {/* Desktop actions */}
-        <div className="hidden md:flex gap-2">
+        {/* Action buttons */}
+        <div className="flex gap-2">
           {!ownChannel && (
             <Button onClick={handleConnectYoutube} className="bg-youtube-red hover:bg-youtube-red/90">
-              <Youtube className="h-4 w-4 mr-2" />
-              Add Your Channel
+              <Upload className="h-4 w-4 mr-2" />
+              <span className="hidden sm:inline">Add Your Channel</span>
             </Button>
           )}
           
-          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <PlusCircle className="h-4 w-4 mr-2" />
-                Add Competitor
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Add Competitor Channel</DialogTitle>
-              </DialogHeader>
-              <div className="py-4">
-                <Label htmlFor="channel-url">Channel URL or ID</Label>
-                <Input
-                  id="channel-url"
-                  placeholder="https://youtube.com/c/channel or channel ID"
-                  value={channelInput}
-                  onChange={(e) => setChannelInput(e.target.value)}
-                  className="mt-2"
-                />
-              </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
-                <Button onClick={handleAddCompetitor} disabled={!channelInput.trim() || isLoading}>
-                  {isLoading ? 'Adding...' : 'Add Channel'}
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+          <Button onClick={() => setDialogOpen(true)}>
+            <PlusCircle className="h-4 w-4 mr-2" />
+            <span className="hidden sm:inline">Add Competitor</span>
+          </Button>
           
           <Button variant="outline" onClick={refreshData} disabled={isLoading}>
-            <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-            Refresh Data
+            <RefreshCw className={`h-4 w-4 ${!isLoading && "mr-2"} ${isLoading ? 'animate-spin' : ''}`} />
+            <span className="hidden sm:inline">Refresh</span>
           </Button>
-        </div>
-        
-        {/* Mobile dropdown menu */}
-        <div className="md:hidden">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="icon">
-                <Menu className="h-5 w-5" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              {!ownChannel && (
-                <DropdownMenuItem onClick={handleConnectYoutube}>
-                  <Youtube className="h-4 w-4 mr-2 text-youtube-red" />
-                  <span>Add Your Channel</span>
-                </DropdownMenuItem>
-              )}
-              <DropdownMenuItem onClick={() => setDialogOpen(true)}>
-                <PlusCircle className="h-4 w-4 mr-2" />
-                <span>Add Competitor</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={refreshData} disabled={isLoading}>
-                <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-                <span>Refresh Data</span>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
         </div>
       </div>
       
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add Competitor Channel</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <Label htmlFor="channel-url">Channel URL or ID</Label>
+            <Input
+              id="channel-url"
+              placeholder="https://youtube.com/c/channel or channel ID"
+              value={channelInput}
+              onChange={(e) => setChannelInput(e.target.value)}
+              className="mt-2"
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
+            <Button onClick={handleAddCompetitor} disabled={!channelInput.trim() || isLoading}>
+              {isLoading ? 'Adding...' : 'Add Channel'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
       <Card className="shadow-sm">
-        <CardHeader>
+        <CardHeader className="pb-2">
           <CardTitle>Views Comparison - Last 7 Days</CardTitle>
           <CardDescription>
             Compare daily views between your channel and competitors
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="h-[400px]">
+          <div className="h-[300px]">
             {chartData.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart
                   data={chartData}
                   margin={{
                     top: 5,
-                    right: 30,
-                    left: 20,
+                    right: 20,
+                    left: 0,
                     bottom: 5,
                   }}
                 >
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="date" />
-                  <YAxis />
-                  <Tooltip />
-                  <Legend />
+                  <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
+                  <XAxis dataKey="date" fontSize={12} />
+                  <YAxis fontSize={12} width={40} />
+                  <Tooltip content={({ active, payload, label }) => {
+                    if (active && payload?.length) {
+                      return (
+                        <div className="bg-background border border-border p-3 rounded-lg shadow-lg">
+                          <p className="font-medium mb-2">{label}</p>
+                          {payload.map((entry, index) => (
+                            <div key={index} className="flex justify-between items-center gap-4 mb-1">
+                              <div className="flex items-center gap-1">
+                                <div className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.color }} />
+                                <p className="text-xs text-muted-foreground">{entry.name}</p>
+                              </div>
+                              <p className="font-mono text-xs font-medium">{entry.value.toLocaleString()} views</p>
+                            </div>
+                          ))}
+                        </div>
+                      );
+                    }
+                    return null;
+                  }} />
+                  <Legend iconSize={8} iconType="circle" wrapperStyle={{ fontSize: '12px', paddingTop: '8px' }} />
                   
                   {/* Own channel line */}
                   {ownChannel && (
@@ -201,8 +187,8 @@ const Dashboard: React.FC = () => {
                       dataKey={ownChannel.title || 'Your Channel'}
                       stroke="#6b46c1"
                       strokeWidth={2}
-                      dot={{ r: 4 }}
-                      activeDot={{ r: 8 }}
+                      dot={{ r: 3 }}
+                      activeDot={{ r: 6 }}
                     />
                   )}
                   
@@ -214,6 +200,7 @@ const Dashboard: React.FC = () => {
                       dataKey={comp.title}
                       stroke={getLineColor(index + 1)}
                       strokeWidth={1.5}
+                      dot={{ r: 2 }}
                     />
                   ))}
                 </LineChart>
@@ -227,7 +214,7 @@ const Dashboard: React.FC = () => {
         </CardContent>
       </Card>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {/* Own Channel Card */}
         {ownChannel ? (
           <Card className="shadow-sm border-2 border-primary/10">
@@ -268,13 +255,13 @@ const Dashboard: React.FC = () => {
         ) : (
           <Card className="shadow-sm border-2 border-dashed border-gray-300">
             <CardContent className="flex flex-col items-center justify-center py-8">
-              <Youtube className="h-12 w-12 text-youtube-red mb-4" />
+              <Upload className="h-12 w-12 text-youtube-red mb-4" />
               <h3 className="text-lg font-medium mb-2">Connect Your Channel</h3>
               <p className="text-sm text-muted-foreground text-center mb-4">
-                Add your YouTube channel to see stats and compare with competitors
+                Add your YouTube channel to see stats
               </p>
               <Button onClick={handleConnectYoutube} className="bg-youtube-red hover:bg-youtube-red/90">
-                <Youtube className="h-4 w-4 mr-2" />
+                <Upload className="h-4 w-4 mr-2" />
                 Connect YouTube
               </Button>
             </CardContent>

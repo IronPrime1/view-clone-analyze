@@ -1,199 +1,181 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useYoutube } from '../contexts/YoutubeContext';
-import { Edit, Save, Trash2, FileText } from 'lucide-react';
-import { Textarea } from '@/components/ui/textarea';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { ExternalLink, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { supabase } from '../integrations/supabase/client';
+import { useNavigate } from 'react-router-dom';
+
+interface Script {
+  id: string;
+  content: string;
+  created_at: string;
+  video_id: string;
+  video_title?: string;
+  channel_title?: string;
+}
 
 const Scripts: React.FC = () => {
-  const { competitors, ownChannel } = useYoutube();
-  const [activeTab, setActiveTab] = useState('my-scripts');
-  const [editingScript, setEditingScript] = useState<string | null>(null);
-  const [scriptContent, setScriptContent] = useState('');
-  const [scriptTitle, setScriptTitle] = useState('');
-  const [dialogOpen, setDialogOpen] = useState(false);
+  const [scripts, setScripts] = useState<Script[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const navigate = useNavigate();
   
-  // This would typically come from a database, but for now we'll mock it
-  const [scripts, setScripts] = useState([
-    { id: '1', title: 'Hook for tech videos', content: 'Are you tired of complicated tech solutions? In this video, I\'ll show you how to solve [problem] in just a few minutes.', date: '2025-05-05' },
-    { id: '2', title: 'Competitor analysis intro', content: 'Today we\'re looking at what makes [competitor] videos so successful and how we can learn from their approach.', date: '2025-05-07' },
-  ]);
+  useEffect(() => {
+    fetchScripts();
+  }, []);
   
-  const handleEditScript = (id: string) => {
-    const script = scripts.find(s => s.id === id);
-    if (script) {
-      setEditingScript(id);
-      setScriptContent(script.content);
-      setScriptTitle(script.title);
-      setDialogOpen(true);
-    }
-  };
-  
-  const handleSaveScript = () => {
-    if (editingScript) {
-      // Update existing script
-      setScripts(scripts.map(script => 
-        script.id === editingScript 
-          ? { ...script, title: scriptTitle, content: scriptContent } 
-          : script
-      ));
-      toast.success("Script updated successfully");
-    } else {
-      // Create new script
-      const newScript = {
-        id: Date.now().toString(),
-        title: scriptTitle,
-        content: scriptContent,
-        date: new Date().toISOString().split('T')[0]
-      };
-      setScripts([newScript, ...scripts]);
-      toast.success("New script created");
-    }
+  const fetchScripts = async () => {
+    setIsLoading(true);
     
-    // Reset and close dialog
-    setDialogOpen(false);
-    setEditingScript(null);
-    setScriptContent('');
-    setScriptTitle('');
+    try {
+      // Get the current user
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        navigate('/auth');
+        return;
+      }
+      
+      // Fetch saved scripts for the current user
+      const { data: scriptsData, error } = await supabase
+        .from('saved_scripts')
+        .select('*')
+        .eq('user_id', session.user.id)
+        .order('created_at', { ascending: false });
+      
+      if (error) {
+        throw error;
+      }
+      
+      // Fetch video details for each script
+      const scriptsWithDetails = await Promise.all(scriptsData.map(async (script) => {
+        // Try to find video in competitor_videos table
+        const { data: videoData } = await supabase
+          .from('competitor_videos')
+          .select('title, channel_id')
+          .eq('youtube_id', script.video_id)
+          .single();
+        
+        let channelTitle = '';
+        
+        if (videoData?.channel_id) {
+          // Get channel title
+          const { data: channelData } = await supabase
+            .from('competitor_channels')
+            .select('title')
+            .eq('id', videoData.channel_id)
+            .single();
+          
+          if (channelData) {
+            channelTitle = channelData.title;
+          }
+        }
+        
+        return {
+          ...script,
+          video_title: videoData?.title || 'Unknown Video',
+          channel_title: channelTitle || 'Unknown Channel'
+        };
+      }));
+      
+      setScripts(scriptsWithDetails);
+    } catch (error) {
+      console.error('Error fetching scripts:', error);
+      toast.error('Failed to load scripts');
+    } finally {
+      setIsLoading(false);
+    }
   };
   
-  const handleDeleteScript = (id: string) => {
-    setScripts(scripts.filter(script => script.id !== id));
-    toast.success("Script deleted");
+  const handleDeleteScript = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('saved_scripts')
+        .delete()
+        .eq('id', id);
+      
+      if (error) throw error;
+      
+      setScripts(scripts.filter(script => script.id !== id));
+      toast.success('Script deleted successfully');
+    } catch (error) {
+      console.error('Error deleting script:', error);
+      toast.error('Failed to delete script');
+    }
   };
   
-  const handleNewScript = () => {
-    setEditingScript(null);
-    setScriptTitle('');
-    setScriptContent('');
-    setDialogOpen(true);
+  const openYouTubeVideo = (videoId: string) => {
+    window.open(`https://youtube.com/watch?v=${videoId}`, '_blank');
   };
+  
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-[calc(100vh-200px)]">
+        <div className="h-8 w-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
   
   return (
     <div className="space-y-6 pb-20 md:pb-0">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Scripts</h1>
-        
-        <Button onClick={handleNewScript}>
-          <FileText className="h-4 w-4 mr-2" />
-          New Script
-        </Button>
+        <h1 className="text-2xl font-bold">Saved Scripts</h1>
       </div>
       
-      <Tabs defaultValue="my-scripts" value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="mb-4">
-          <TabsTrigger value="my-scripts">My Scripts</TabsTrigger>
-          <TabsTrigger value="competitor-scripts">Competitor Scripts</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="my-scripts" className="space-y-4">
-          {scripts.length > 0 ? (
-            <ScrollArea className="h-[calc(100vh-300px)]">
-              <div className="space-y-4">
-                {scripts.map(script => (
-                  <Card key={script.id}>
-                    <CardHeader className="pb-2">
-                      <div className="flex justify-between">
-                        <CardTitle className="text-lg">{script.title}</CardTitle>
-                        <div className="flex space-x-1">
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            onClick={() => handleEditScript(script.id)}
-                          >
-                            <Edit className="h-4 w-4" />
-                            <span className="sr-only">Edit</span>
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            className="text-destructive hover:text-destructive" 
-                            onClick={() => handleDeleteScript(script.id)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                            <span className="sr-only">Delete</span>
-                          </Button>
-                        </div>
-                      </div>
-                      <p className="text-xs text-muted-foreground">Created: {script.date}</p>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="whitespace-pre-wrap">{script.content}</p>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </ScrollArea>
-          ) : (
-            <Card>
-              <CardContent className="py-10 text-center">
-                <p className="mb-4">You haven't created any scripts yet.</p>
-                <Button onClick={handleNewScript}>Create Your First Script</Button>
-              </CardContent>
-            </Card>
-          )}
-        </TabsContent>
-        
-        <TabsContent value="competitor-scripts" className="space-y-4">
-          <Card>
-            <CardContent className="py-10 text-center">
-              <p>Competitor scripts will be available in a future update.</p>
-              <p className="text-muted-foreground mt-2">
-                This feature will allow you to save and analyze scripts from competitor videos.
-              </p>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
-      
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>{editingScript ? 'Edit Script' : 'Create New Script'}</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="title">Title</Label>
-              <Input 
-                id="title" 
-                value={scriptTitle} 
-                onChange={(e) => setScriptTitle(e.target.value)}
-                placeholder="Enter a title for your script"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="content">Script Content</Label>
-              <Textarea 
-                id="content"
-                value={scriptContent}
-                onChange={(e) => setScriptContent(e.target.value)}
-                placeholder="Write your script here..."
-                className="min-h-[200px]"
-              />
-            </div>
+      {scripts.length > 0 ? (
+        <ScrollArea className="h-[calc(100vh-300px)]">
+          <div className="space-y-4">
+            {scripts.map(script => (
+              <Card key={script.id}>
+                <CardHeader className="pb-2">
+                  <div className="flex justify-between">
+                    <div>
+                      <CardTitle className="text-lg">{script.video_title}</CardTitle>
+                      <p className="text-xs text-muted-foreground">{script.channel_title}</p>
+                    </div>
+                    <div className="flex space-x-1">
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        onClick={() => openYouTubeVideo(script.video_id)}
+                      >
+                        <ExternalLink className="h-4 w-4" />
+                        <span className="sr-only">Open Video</span>
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="text-destructive hover:text-destructive" 
+                        onClick={() => handleDeleteScript(script.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                        <span className="sr-only">Delete</span>
+                      </Button>
+                    </div>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Saved: {new Date(script.created_at).toLocaleDateString()}
+                  </p>
+                </CardHeader>
+                <CardContent>
+                  <p className="whitespace-pre-wrap">{script.content}</p>
+                </CardContent>
+              </Card>
+            ))}
           </div>
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
-              Cancel
+        </ScrollArea>
+      ) : (
+        <Card>
+          <CardContent className="py-10 text-center">
+            <p className="mb-4">You haven't saved any scripts yet.</p>
+            <Button onClick={() => navigate('/competitors')}>
+              Browse Competitor Videos
             </Button>
-            <Button 
-              type="button" 
-              onClick={handleSaveScript} 
-              disabled={!scriptTitle.trim() || !scriptContent.trim()}
-            >
-              <Save className="h-4 w-4 mr-2" />
-              {editingScript ? 'Update' : 'Save'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };
