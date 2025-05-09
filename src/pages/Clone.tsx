@@ -55,11 +55,11 @@ const Clone: React.FC = () => {
       const video = getVideoById(selectedVideo);
       if (!video) throw new Error("Video not found");
       
-      const videoUrl = `https://www.youtube.com/watch?v=${video.id}`;
+      const videourl = `https://www.youtube.com/watch?v=${video.id}`;
       
       const { data, error } = await supabase.functions.invoke('clone-script', {
         body: {
-          videoUrl: videoUrl,
+          videoUrl: videourl,
           userScript: userVideoUrl || null
         }
       });
