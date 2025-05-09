@@ -59,8 +59,8 @@ const Clone: React.FC = () => {
       
       const { data, error } = await supabase.functions.invoke('clone-script', {
         body: {
-          competitorVideoUrl: videoUrl,
-          userVideoUrl: userVideoUrl || null
+          videoUrl: videoUrl,
+          userScript: userVideoUrl || null
         }
       });
       
