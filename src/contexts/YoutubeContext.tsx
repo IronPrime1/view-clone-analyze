@@ -363,23 +363,7 @@ export const YoutubeProvider: React.FC<{children: React.ReactNode}> = ({ childre
     
     try {
       // Extract channel ID or username from input
-      let channelId = channelInput;
-      
-      // If it's a URL, extract the channel ID
-      if (channelInput.includes('youtube.com') || channelInput.includes('youtu.be')) {
-        const url = new URL(channelInput);
-        if (url.pathname.includes('/channel/')) {
-          // Extract channel ID from URL like youtube.com/channel/UCxxxxx
-          channelId = url.pathname.split('/channel/')[1].split('/')[0];
-        } else if (url.pathname.includes('/c/')) {
-          // This is a custom URL, need to first resolve to channel ID
-          // For simplicity, we'll use it directly but in a real app would need
-          // to first convert to a channel ID using YouTube API
-          channelId = url.pathname.split('/c/')[1].split('/')[0];
-        } else if (url.pathname.includes('/user/')) {
-          channelId = url.pathname.split('/user/')[1].split('/')[0];
-        }
-      }
+      const channelId = channelInput;
       
       // Call our edge function to add the competitor
       const { data: userData } = await supabase.auth.getUser();
