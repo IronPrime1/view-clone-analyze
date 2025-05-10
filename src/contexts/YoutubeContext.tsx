@@ -200,19 +200,24 @@ export const YoutubeProvider: React.FC<{children: React.ReactNode}> = ({ childre
   // Load top videos for a channel
   const loadTopVideos = async (channelId: string) => {
     try {
+      console.log("Loading top videos for channel:", channelId);
       const { data, error } = await supabase.functions.invoke('youtube-fetch', {
         body: {
           channelId: channelId,
-          action: 'get_channel_data'
+          action: 'get_top_videos'
         }
       });
       
-      if (error) throw error;
+      if (error) {
+        console.error("Error from edge function:", error);
+        throw error;
+      }
       
-      if (data?.channel?.videos && Array.isArray(data.channel.videos)) {
-        // Sort by view count descending
-        const sortedVideos = [...data.channel.videos].sort((a, b) => b.viewCount - a.viewCount);
-        setTopVideos(sortedVideos.slice(0, 3)); // Take top 3
+      console.log("Received top videos data:", data);
+      
+      if (data?.videos && Array.isArray(data.videos)) {
+        // Already sorted by view count in the edge function
+        setTopVideos(data.videos);
       }
     } catch (error) {
       console.error("Error loading top videos:", error);
@@ -314,6 +319,7 @@ export const YoutubeProvider: React.FC<{children: React.ReactNode}> = ({ childre
   // Load daily views data from Supabase
   const loadViewsData = async () => {
     try {
+      // Get data for the past 30 days (to have enough history)
       const { data, error } = await supabase
         .from('daily_views')
         .select('channel_id, date, views')
@@ -335,14 +341,23 @@ export const YoutubeProvider: React.FC<{children: React.ReactNode}> = ({ childre
         });
       });
       
-      // Get the last 7 days of data for each channel
+      // Get up to yesterday's data (exclude today's incomplete data)
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      const yesterdayStr = yesterday.toISOString().split('T')[0];
+      
       Object.keys(views).forEach(channelId => {
         const channelViews = views[channelId];
-        if (channelViews.length > 7) {
-          views[channelId] = channelViews.slice(-7);
+        // Filter to only include data up to yesterday
+        views[channelId] = channelViews.filter(item => item.date <= yesterdayStr);
+        
+        // Take last 7 days maximum
+        if (views[channelId].length > 7) {
+          views[channelId] = views[channelId].slice(-7);
         }
       });
       
+      console.log("Loaded views data:", views);
       setViewsData(views);
     } catch (error) {
       console.error("Error loading views data:", error);

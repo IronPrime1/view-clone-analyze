@@ -52,7 +52,12 @@ serve(async (req) => {
       .from('competitor_channels')
       .select('user_id, youtube_id');
     
-    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+    // Use yesterday's date for more accurate view data comparisons
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const formattedYesterday = yesterday.toISOString().split('T')[0]; // YYYY-MM-DD format
+    
+    console.log("Using date:", formattedYesterday);
     
     // 2. Process each user's own channel
     if (profiles && profiles.length > 0) {
@@ -62,17 +67,17 @@ serve(async (req) => {
         try {
           console.log(`Processing user channel: ${profile.youtube_channel_id}`);
           
-          // Check if we already have entry for today
+          // Check if we already have entry for yesterday's date
           const { data: existingViews } = await supabaseAdmin
             .from('daily_views')
             .select('id')
             .eq('channel_id', profile.youtube_channel_id)
             .eq('user_id', profile.id)
-            .eq('date', today)
+            .eq('date', formattedYesterday)
             .maybeSingle();
             
           if (existingViews) {
-            console.log("Already processed user channel today, skipping");
+            console.log("Already processed user channel for yesterday, skipping");
             continue;
           }
           
@@ -95,13 +100,13 @@ serve(async (req) => {
           
           const viewCount = parseInt(channelData.items[0].statistics.viewCount) || 0;
           
-          // Record the view count for today
+          // Record the view count for yesterday
           await supabaseAdmin
             .from('daily_views')
             .insert({
               channel_id: profile.youtube_channel_id,
               user_id: profile.id,
-              date: today,
+              date: formattedYesterday,
               views: viewCount
             });
             
@@ -129,17 +134,17 @@ serve(async (req) => {
         try {
           console.log(`Processing competitor channel: ${competitor.youtube_id}`);
           
-          // Check if we already have entry for today
+          // Check if we already have entry for yesterday's date
           const { data: existingViews } = await supabaseAdmin
             .from('daily_views')
             .select('id')
             .eq('channel_id', competitor.youtube_id)
             .eq('user_id', competitor.user_id)
-            .eq('date', today)
+            .eq('date', formattedYesterday)
             .maybeSingle();
             
           if (existingViews) {
-            console.log("Already processed competitor channel today, skipping");
+            console.log("Already processed competitor channel for yesterday, skipping");
             continue;
           }
           
@@ -162,13 +167,13 @@ serve(async (req) => {
           
           const viewCount = parseInt(channelData.items[0].statistics.viewCount) || 0;
           
-          // Record the view count for today
+          // Record the view count for yesterday
           await supabaseAdmin
             .from('daily_views')
             .insert({
               channel_id: competitor.youtube_id,
               user_id: competitor.user_id,
-              date: today,
+              date: formattedYesterday,
               views: viewCount
             });
             

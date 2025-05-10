@@ -45,8 +45,8 @@ async function fetchChannelData(channelId: string, apiKey: string) {
 }
 
 // Helper function to fetch videos for a channel
-async function fetchChannelVideos(channelId: string, apiKey: string, maxResults = 10) {
-  // Get channel uploads playlist ID
+async function fetchChannelVideos(channelId: string, apiKey: string, maxResults = 30) {
+  // Get channel uploads playlist ID - increased maxResults to get more videos to find top performing ones
   const channelResponse = await fetch(
     `https://www.googleapis.com/youtube/v3/channels?part=contentDetails&id=${channelId}&key=${apiKey}`
   );
@@ -63,7 +63,7 @@ async function fetchChannelVideos(channelId: string, apiKey: string, maxResults 
   
   const uploadsPlaylistId = channelData.items[0].contentDetails.relatedPlaylists.uploads;
   
-  // Get videos from uploads playlist
+  // Get videos from uploads playlist - increased maxResults to get more videos
   const playlistResponse = await fetch(
     `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet,contentDetails&maxResults=${maxResults}&playlistId=${uploadsPlaylistId}&key=${apiKey}`
   );
@@ -125,16 +125,24 @@ async function fetchChannelVideos(channelId: string, apiKey: string, maxResults 
 }
 
 // Helper to fetch popular videos from a channel (by most views)
-async function fetchPopularVideos(channelId: string, apiKey: string) {
+async function fetchTopVideos(channelId: string, apiKey: string, limit = 3) {
   try {
-    // First get all videos (we'll get 20 to have a good pool to choose from)
-    const allVideos = await fetchChannelVideos(channelId, apiKey, 20);
+    console.log(`Fetching top ${limit} videos for channel: ${channelId}`);
+    // Fetch a larger pool of videos (30) to get better top performing ones
+    const allVideos = await fetchChannelVideos(channelId, apiKey, 50);
     
-    // Sort by view count
+    console.log(`Found ${allVideos.length} videos total`);
+    
+    // Sort by view count in descending order
     const sortedVideos = allVideos.sort((a, b) => b.viewCount - a.viewCount);
     
-    // Take top 10
-    return sortedVideos.slice(0, 10);
+    console.log("Top 5 videos by views:");
+    sortedVideos.slice(0, 5).forEach((v, i) => {
+      console.log(`${i+1}. ${v.title}: ${v.viewCount} views`);
+    });
+    
+    // Take top N (default 3)
+    return sortedVideos.slice(0, limit);
   } catch (error) {
     console.error("Error fetching popular videos:", error);
     return [];
@@ -251,7 +259,7 @@ serve(async (req) => {
         
         // Fetch popular videos for the channel
         console.log("Fetching popular videos for the competitor channel");
-        const videos = await fetchPopularVideos(channelId, youtubeApiKey);
+        const videos = await fetchTopVideos(channelId, youtubeApiKey);
         
         // Insert videos into database
         if (videos.length > 0) {
@@ -302,7 +310,7 @@ serve(async (req) => {
         const channelData = await fetchChannelData(channelId, youtubeApiKey);
         
         // Fetch videos
-        const videos = await fetchPopularVideos(channelId, youtubeApiKey);
+        const videos = await fetchTopVideos(channelId, youtubeApiKey);
         
         return new Response(
           JSON.stringify({
@@ -311,6 +319,24 @@ serve(async (req) => {
               ...channelData,
               videos
             }
+          }),
+          { 
+            status: 200, 
+            headers: { ...corsHeaders, "Content-Type": "application/json" }
+          }
+        );
+      }
+      
+      case 'get_top_videos': {
+        console.log("Getting top videos for:", channelId);
+        
+        // Fetch top videos (increased to fetch top 3)
+        const videos = await fetchTopVideos(channelId, youtubeApiKey, 3);
+        
+        return new Response(
+          JSON.stringify({
+            success: true,
+            videos
           }),
           { 
             status: 200, 
@@ -381,7 +407,7 @@ serve(async (req) => {
                 .eq('id', comp.id);
               
               // Get fresh videos
-              const videos = await fetchPopularVideos(comp.youtube_id, youtubeApiKey);
+              const videos = await fetchTopVideos(comp.youtube_id, youtubeApiKey);
               
               if (videos && videos.length > 0) {
                 // Delete old videos

@@ -57,8 +57,16 @@ const Dashboard: React.FC = () => {
       return [];
     }
     
+    // Get the current date and make sure we only include data up to yesterday
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayStr = yesterday.toISOString().split('T')[0];
+    
+    // Filter dates to only include up to yesterday
+    const filteredDates = allDates.filter(date => date <= yesterdayStr);
+    
     // Prepare chart data with dates and views for each channel
-    return allDates.map(date => {
+    return filteredDates.map(date => {
       const dataPoint: any = { date };
       
       // Add own channel data
@@ -281,10 +289,10 @@ const Dashboard: React.FC = () => {
       
       <Card className="shadow-sm">
         <CardHeader className="pb-3 pt-3 mt-0">
-          <CardTitle className="text-lg text-center">Views Comparison - Last 7 Days</CardTitle>
+          <CardTitle className="text-lg text-center">Views Comparison</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="sm:h-[250px] h-[180px]">
+          <div className="sm:h-[200px] h-[150px]">
             {chartData.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart
@@ -363,7 +371,7 @@ const Dashboard: React.FC = () => {
               </ResponsiveContainer>
             ) : (
               <div className="flex items-center justify-center h-full">
-                <p className="text-muted-foreground">No view data available yet. Data will appear after 24 hours.</p>
+                <p className="text-muted-foreground">No view data available yet. Data will appear after collecting at least one day of data.</p>
               </div>
             )}
           </div>
