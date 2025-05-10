@@ -44,10 +44,12 @@ const Layout: React.FC = () => {
     <div className="flex flex-col md:flex-row min-h-screen w-full">
       {/* Mobile Header */}
       <header className="md:hidden sticky top-0 z-10 bg-background border-b flex items-center justify-between px-4 py-2">
-        <div className="flex items-center gap-2">
-          <Youtube className="h-6 w-6 text-youtube-red" />
-          <h1 className="text-lg font-bold">ScriptX</h1>
-        </div>
+        <div className="flex items-center space-x-2">
+          <div className="h-8 w-8 rounded-md flex items-center justify-center">
+            <img src="/Logo1.png" alt="Logo" className="h-8 w-8 rounded-md" />
+          </div>
+            <span className="text-xl font-semibold font-inter">ScriptX</span>
+          </div>
         
         <Sheet open={open} onOpenChange={setOpen}>
           <SheetTrigger asChild>
@@ -59,12 +61,20 @@ const Layout: React.FC = () => {
           <SheetContent side="left" className="p-0">
             <div className="flex flex-col h-full bg-sidebar text-sidebar-foreground">
               <div className="p-4 border-b border-sidebar-border">
-                <div className="flex items-center gap-2">
-                  <Youtube className="h-6 w-6 text-youtube-red" />
-                  <h1 className="text-xl font-bold">ScriptX</h1>
-                </div>
+                <div className="flex items-center space-x-2">
+                  <div className="h-8 w-8 rounded-md flex items-center justify-center">
+                    <img src="/Logo1.png" alt="Logo" className="h-8 w-8 rounded-md" />
+                  </div>
+                    <span className="text-xl font-semibold font-inter">ScriptX</span>
+                  </div>  
+              </div>
+              
+              <nav 
+                className="flex-1 px-4 py-2"
+                onClick={() => setOpen(false)}
+              >
                 {ownChannel && (
-                  <div className="mt-4">
+                  <div className="mt-0 pt-0 pb-2">
                     <div className="flex items-center gap-2">
                       <img 
                         src={ownChannel.thumbnail} 
@@ -78,12 +88,6 @@ const Layout: React.FC = () => {
                     </div>
                   </div>
                 )}
-              </div>
-              
-              <nav 
-                className="flex-1 p-4"
-                onClick={() => setOpen(false)}
-              >
                 <ul className="space-y-2">
                   <li>
                     <Button 

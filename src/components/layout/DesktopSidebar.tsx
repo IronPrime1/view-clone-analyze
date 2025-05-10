@@ -12,9 +12,11 @@ const DesktopSidebar: React.FC = () => {
     <div className="desktop-nav w-64 bg-sidebar text-sidebar-foreground flex-shrink-0 hidden md:block">
       <div className="flex flex-col h-full">
         <div className="p-4 border-b border-sidebar-border">
-          <div className="flex items-center gap-2 align-center">
-            <Youtube className="h-8 w-8 text-youtube-red" />
-            <h1 className="text-xl font-bold">ScriptX</h1>
+          <div className="flex items-center space-x-2">
+          <div className="h-8 w-8 rounded-md flex items-center justify-center">
+            <img src="/Logo1.png" alt="Logo" className="h-8 w-8 rounded-md" />
+          </div>
+            <span className="text-xl font-semibold font-inter">ScriptX</span>
           </div>
         </div>
         

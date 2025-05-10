@@ -94,18 +94,18 @@ const Dashboard: React.FC = () => {
         {/* Action buttons */}
         <div className="flex gap-2">
           {!ownChannel && (
-            <Button onClick={handleConnectYoutube} className="bg-youtube-red hover:bg-youtube-red/90 h-8 w-10">
+            <Button onClick={handleConnectYoutube} className="bg-youtube-red hover:bg-youtube-red/90 h-8 w-10 sm:h-[100%] sm:w-[100%]">
               <Upload className="h-2 w-2" />
               <span className="hidden sm:inline">Add Your Channel</span>
             </Button>
           )}
           
-          <Button onClick={() => setDialogOpen(true)} className="h-8 w-10">
+          <Button onClick={() => setDialogOpen(true)} className="h-8 w-10 sm:h-[100%] sm:w-[100%]">
             <PlusCircle className="h-2 w-2" />
             <span className="hidden sm:inline">Add Competitor</span>
           </Button>
           
-          <Button variant="outline" onClick={refreshData} disabled={isLoading} className="h-8 w-10">
+          <Button variant="outline" onClick={refreshData} disabled={isLoading} className="h-8 w-10 sm:h-[100%] sm:w-[100%]">
             <RefreshCw className={`h-2 w-2 ${isLoading ? 'animate-spin' : ''}`} />
             <span className="hidden sm:inline">Refresh</span>
           </Button>
@@ -117,17 +117,17 @@ const Dashboard: React.FC = () => {
           <DialogHeader>
             <DialogTitle>Add Competitor Channel</DialogTitle>
           </DialogHeader>
-          <div className="py-4">
-            <Label htmlFor="channel-url">Channel URL or ID</Label>
+          <div className="pt-4">
+            <Label htmlFor="channel-url">Channel ID</Label>
             <Input
               id="channel-url"
-              placeholder="https://youtube.com/c/channel or channel ID"
+              placeholder="channel ID"
               value={channelInput}
               onChange={(e) => setChannelInput(e.target.value)}
               className="mt-2"
             />
           </div>
-          <DialogFooter>
+          <DialogFooter className="gap-3 mt-0 pt-0">
             <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
             <Button onClick={handleAddCompetitor} disabled={!channelInput.trim() || isLoading}>
               {isLoading ? 'Adding...' : 'Add Channel'}

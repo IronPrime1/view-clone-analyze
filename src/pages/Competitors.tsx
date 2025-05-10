@@ -59,7 +59,7 @@ const Competitors: React.FC = () => {
         <div className="flex gap-2">
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
-              <Button className="h-8 w-10">
+              <Button className="h-8 w-10 sm:h-[100%] sm:w-[100%] whitespace-nowrap">
                 <PlusCircle className="h-4 w-4" />
                 <span className="hidden sm:inline">Add Competitor</span>
               </Button>
@@ -68,7 +68,7 @@ const Competitors: React.FC = () => {
               <DialogHeader>
                 <DialogTitle>Add Competitor Channel</DialogTitle>
               </DialogHeader>
-              <div className="py-4">
+              <div className="pt-4">
                 <Label htmlFor="channel-url">Channel ID</Label>
                 <Input
                   id="channel-url"
@@ -78,7 +78,7 @@ const Competitors: React.FC = () => {
                   className="mt-2"
                 />
               </div>
-              <DialogFooter>
+              <DialogFooter className="gap-3 mt-0 pt-0">
                 <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
                 <Button onClick={handleAddCompetitor} disabled={!channelInput.trim() || isLoading}>
                   {isLoading ? 'Adding...' : 'Add Channel'}
@@ -87,7 +87,7 @@ const Competitors: React.FC = () => {
             </DialogContent>
           </Dialog>
           
-          <Button variant="outline" onClick={refreshData} disabled={isLoading} className="whitespace-nowrap h-8 w-10">
+          <Button variant="outline" onClick={refreshData} disabled={isLoading} className="whitespace-nowrap h-8 w-10 sm:h-[100%] sm:w-[100%]">
             <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
             <span className="hidden sm:inline">Refresh Data</span>
           </Button>

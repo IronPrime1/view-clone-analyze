@@ -240,7 +240,7 @@ const Clone: React.FC = () => {
                 A customized script based on the competitor's content
               </CardDescription>
             </CardHeader>
-            <CardContent className="flex-1 overflow-auto">
+            <CardContent className="flex-1 overflow-auto pt-6">
               {generatedScript ? (
                 <div className="font-mono text-sm rounded-md h-[300px] sm:h-[400px]overflow-y-auto whitespace-pre-wrap pt-2">
                   {generatedScript}
