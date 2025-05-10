@@ -43,11 +43,13 @@ const Dashboard: React.FC = () => {
     // Get all dates from all channels
     const allDates: string[] = [];
     Object.values(viewsData).forEach(channelData => {
-      channelData.forEach(item => {
-        if (!allDates.includes(item.date)) {
-          allDates.push(item.date);
-        }
-      });
+      if (channelData && channelData.length > 0) {
+        channelData.forEach(item => {
+          if (!allDates.includes(item.date)) {
+            allDates.push(item.date);
+          }
+        });
+      }
     });
     
     // Sort dates
@@ -57,7 +59,7 @@ const Dashboard: React.FC = () => {
       return [];
     }
     
-    // Get the current date and make sure we only include data up to yesterday
+    // Get yesterday's date as the cutoff
     const yesterday = new Date();
     yesterday.setDate(yesterday.getDate() - 1);
     const yesterdayStr = yesterday.toISOString().split('T')[0];
@@ -71,7 +73,7 @@ const Dashboard: React.FC = () => {
       
       // Add own channel data
       if (ownChannel && viewsData[ownChannel.id]) {
-        const dayData = viewsData[ownChannel.id].find(d => d.date === date);
+        const dayData = viewsData[ownChannel.id]?.find(d => d.date === date);
         if (dayData) {
           dataPoint[ownChannel.title || 'Your Channel'] = dayData.views;
         }
@@ -80,7 +82,7 @@ const Dashboard: React.FC = () => {
       // Add competitor data
       competitors.forEach(comp => {
         if (viewsData[comp.id]) {
-          const dayData = viewsData[comp.id].find(d => d.date === date);
+          const dayData = viewsData[comp.id]?.find(d => d.date === date);
           if (dayData) {
             dataPoint[comp.title] = dayData.views;
           }
@@ -129,6 +131,12 @@ const Dashboard: React.FC = () => {
     const date = new Date(dateStr);
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   };
+  
+  // Check if we have actual data for views comparison
+  const hasViewData = chartData.length > 0;
+  
+  // Check if we have actual top videos data
+  const hasTopVideosData = topVideos.length > 0;
   
   return (
     <div className="space-y-6 px-2 pb-2">
@@ -181,72 +189,71 @@ const Dashboard: React.FC = () => {
       </Dialog>
 
       {ownChannel ? (
-          <Card className="shadow-sm border-2 border-primary/10">
-            <CardHeader className="pb-4">
-              <CardTitle className="flex items-center gap-2 text-lg align-center justify-center">
-                {ownChannel.thumbnail ? (
-                  <img 
-                    src={ownChannel.thumbnail} 
-                    alt={ownChannel.title}
-                    className="w-8 h-8 rounded-full"
-                  />
-                ) : (
-                  <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white">
-                    <User className="h-4 w-4" />
-                  </div>
-                )}
-                <span className="truncate text-blue-600">{ownChannel.title || 'Your Channel'}</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-0">
-              <div className="grid grid-cols-3 gap-2 text-center">
-                <div>
-                  <p className="text-sm font-medium">{ownChannel.subscriberCount.toLocaleString()}</p>
-                  <p className="text-xs text-muted-foreground">Subscribers</p>
+        <Card className="shadow-sm border-2 border-primary/10">
+          <CardHeader className="pb-4">
+            <CardTitle className="flex items-center gap-2 text-lg align-center justify-center">
+              {ownChannel.thumbnail ? (
+                <img 
+                  src={ownChannel.thumbnail} 
+                  alt={ownChannel.title}
+                  className="w-8 h-8 rounded-full"
+                />
+              ) : (
+                <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white">
+                  <User className="h-4 w-4" />
                 </div>
-                <div>
-                  <p className="text-sm font-medium">{ownChannel.viewCount.toLocaleString()}</p>
-                  <p className="text-xs text-muted-foreground">Total Views</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium">{ownChannel.videoCount.toLocaleString()}</p>
-                  <p className="text-xs text-muted-foreground">Videos</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ) : (
-          <Card className="shadow-sm border-2 border-dashed border-gray-300">
-            <CardContent className="flex flex-col items-center justify-center py-8">
-              <Upload className="h-12 w-12 text-youtube-red mb-4" />
-              <h3 className="text-lg font-medium mb-2">Connect Your Channel</h3>
-              <p className="text-sm text-muted-foreground text-center mb-4">
-                Add your YouTube channel to see stats
-              </p>
-              <Button onClick={handleConnectYoutube} className="bg-youtube-red hover:bg-youtube-red/90">
-                <Upload className="h-4 w-4 mr-2" />
-                Connect YouTube
-              </Button>
-            </CardContent>
-          </Card>
-        )}
-      
-      {/* Top Videos Card - Only show when user has connected their channel */}
-      {ownChannel && topVideos.length > 0 && (
-        <Card className="shadow-sm">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg">Your Top Performing Videos</CardTitle>
-            <CardDescription>Videos with the highest view counts</CardDescription>
+              )}
+              <span className="truncate text-blue-600">{ownChannel.title || 'Your Channel'}</span>
+            </CardTitle>
           </CardHeader>
           <CardContent className="pt-0">
-            <div className="space-y-4">
-              {topVideos.map((video, index) => (
-                <div key={video.id} className="flex gap-3 bg-accent/20 p-3 rounded-lg">
-                  <div className="relative flex-shrink-0">
+            <div className="grid grid-cols-3 gap-2 text-center">
+              <div>
+                <p className="text-sm font-medium">{ownChannel.subscriberCount.toLocaleString()}</p>
+                <p className="text-xs text-muted-foreground">Subscribers</p>
+              </div>
+              <div>
+                <p className="text-sm font-medium">{ownChannel.viewCount.toLocaleString()}</p>
+                <p className="text-xs text-muted-foreground">Total Views</p>
+              </div>
+              <div>
+                <p className="text-sm font-medium">{ownChannel.videoCount.toLocaleString()}</p>
+                <p className="text-xs text-muted-foreground">Videos</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      ) : (
+        <Card className="shadow-sm border-2 border-dashed border-gray-300">
+          <CardContent className="flex flex-col items-center justify-center py-8">
+            <Upload className="h-12 w-12 text-youtube-red mb-4" />
+            <h3 className="text-lg font-medium mb-2">Connect Your Channel</h3>
+            <p className="text-sm text-muted-foreground text-center mb-4">
+              Add your YouTube channel to see stats
+            </p>
+            <Button onClick={handleConnectYoutube} className="bg-youtube-red hover:bg-youtube-red/90">
+              <Upload className="h-4 w-4 mr-2" />
+              Connect YouTube
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+      
+      {/* Top Videos Card - Simplified version */}
+      {ownChannel && hasTopVideosData && (
+        <Card className="shadow-sm">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg">Top Performing Videos</CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {topVideos.slice(0, 3).map((video) => (
+                <div key={video.id} className="bg-accent/20 p-2 rounded-lg flex flex-col">
+                  <div className="relative mb-2">
                     <img 
                       src={video.thumbnail}
                       alt={video.title}
-                      className="w-20 h-20 sm:w-24 sm:h-24 object-cover rounded-md"
+                      className="w-full h-24 object-cover rounded-md"
                     />
                     {video.isShort && (
                       <span className="absolute top-1 right-1 bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full">
@@ -254,30 +261,20 @@ const Dashboard: React.FC = () => {
                       </span>
                     )}
                   </div>
-                  <div className="flex-1 overflow-hidden">
-                    <h4 className="font-medium text-sm line-clamp-2">{video.title}</h4>
-                    <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
-                      <div className="flex items-center gap-1">
-                        <Eye className="h-3 w-3" />
-                        <span>{formatViewCount(video.viewCount)} views</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <ThumbsUp className="h-3 w-3" />
-                        <span>{formatViewCount(video.likeCount)} likes</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <MessageSquare className="h-3 w-3" />
-                        <span>{formatViewCount(video.commentCount)} comments</span>
-                      </div>
+                  <h4 className="font-medium text-sm line-clamp-1">{video.title}</h4>
+                  <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                    <div className="flex items-center gap-1">
+                      <Eye className="h-3 w-3" />
+                      <span>{formatViewCount(video.viewCount)}</span>
                     </div>
                     <a 
                       href={`https://youtube.com/watch?v=${video.id}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 mt-2 text-xs text-primary hover:underline"
+                      className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
                     >
                       <PlaySquare className="h-3 w-3" />
-                      Watch on YouTube
+                      Watch
                     </a>
                   </div>
                 </div>
@@ -293,7 +290,7 @@ const Dashboard: React.FC = () => {
         </CardHeader>
         <CardContent>
           <div className="sm:h-[200px] h-[150px]">
-            {chartData.length > 0 ? (
+            {hasViewData ? (
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart
                   data={chartData}
@@ -343,7 +340,7 @@ const Dashboard: React.FC = () => {
                   />
                   
                   {/* Own channel line */}
-                  {ownChannel && viewsData[ownChannel.id] && (
+                  {ownChannel && viewsData[ownChannel.id] && viewsData[ownChannel.id].length > 0 && (
                     <Line
                       type="monotone"
                       dataKey={ownChannel.title || 'Your Channel'}
@@ -356,7 +353,7 @@ const Dashboard: React.FC = () => {
                   
                   {/* Competitor lines */}
                   {competitors.map((comp, index) => (
-                    viewsData[comp.id] && (
+                    viewsData[comp.id] && viewsData[comp.id].length > 0 && (
                       <Line
                         key={comp.id}
                         type="monotone"
@@ -371,14 +368,14 @@ const Dashboard: React.FC = () => {
               </ResponsiveContainer>
             ) : (
               <div className="flex items-center justify-center h-full">
-                <p className="text-muted-foreground">No view data available yet. Data will appear after collecting at least one day of data.</p>
+                <p className="text-muted-foreground text-center">No view data available yet. Data will appear after collecting at least one day of data.</p>
               </div>
             )}
           </div>
-          {chartData.length === 0 && (
+          {!hasViewData && (
             <div className="flex justify-center mt-2">
               <Button variant="outline" size="sm" onClick={triggerDailyViewsUpdate} className="text-xs">
-                <RefreshCw className="h-3 w-3 mr-1" /> Get View Data
+                <RefreshCw className="h-3 w-3 mr-1" /> Generate View Data
               </Button>
             </div>
           )}

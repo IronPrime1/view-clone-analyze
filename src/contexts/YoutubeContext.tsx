@@ -1,4 +1,3 @@
-
 import React, { createContext, useState, useContext, useEffect, useRef } from 'react';
 import { supabase } from '../integrations/supabase/client';
 import { toast } from 'sonner';
@@ -367,6 +366,7 @@ export const YoutubeProvider: React.FC<{children: React.ReactNode}> = ({ childre
   // Trigger the daily views tracker edge function
   const triggerDailyViewsUpdate = async () => {
     try {
+      setIsLoading(true);
       const { error } = await supabase.functions.invoke('daily-views-tracker', {});
       
       if (error) throw error;
@@ -376,12 +376,14 @@ export const YoutubeProvider: React.FC<{children: React.ReactNode}> = ({ childre
       // Refresh views data after a delay to allow the edge function to complete
       setTimeout(() => {
         loadViewsData();
+        setIsLoading(false);
       }, 3000);
       
       return;
     } catch (error) {
       console.error("Error triggering daily views update:", error);
       toast.error("Failed to update daily views");
+      setIsLoading(false);
     }
   };
   
