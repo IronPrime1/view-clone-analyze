@@ -1,5 +1,5 @@
 import React, { createContext, useState, useContext, useEffect, useRef } from 'react';
-import { supabase } from '../integrations/supabase/client';
+import { supabase, fetchYouTubeAnalytics } from '../integrations/supabase/client';
 import { toast } from 'sonner';
 
 // Define types
@@ -315,10 +315,32 @@ export const YoutubeProvider: React.FC<{children: React.ReactNode}> = ({ childre
     }
   };
   
-  // Load daily views data from Supabase
+  // Load daily views data from Supabase and YouTube Analytics
   const loadViewsData = async () => {
     try {
-      // Get data for the past 30 days (to have enough history)
+      // First, try to get real YouTube Analytics data for the user's channel
+      if (ownChannel) {
+        try {
+          const { data: analyticsData, error: analyticsError } = await fetchYouTubeAnalytics();
+          
+          if (!analyticsError && Array.isArray(analyticsData) && analyticsData.length > 0) {
+            // We have real YouTube Analytics data for the user's channel
+            setViewsData(prev => ({
+              ...prev,
+              [ownChannel.id]: analyticsData
+            }));
+            
+            // No need to go further for user's channel
+            console.log("Loaded real YouTube Analytics data:", analyticsData);
+          } else {
+            console.log("No YouTube Analytics data available, fallback to stored data");
+          }
+        } catch (error) {
+          console.error("Error fetching YouTube Analytics:", error);
+        }
+      }
+      
+      // Get stored data for competitors and/or fallback for user's channel
       const { data, error } = await supabase
         .from('daily_views')
         .select('channel_id, date, views')
@@ -346,6 +368,11 @@ export const YoutubeProvider: React.FC<{children: React.ReactNode}> = ({ childre
       const yesterdayStr = yesterday.toISOString().split('T')[0];
       
       Object.keys(views).forEach(channelId => {
+        // Skip if we already have real YouTube data for this channel
+        if (ownChannel && channelId === ownChannel.id && viewsData[channelId]) {
+          return;
+        }
+        
         const channelViews = views[channelId];
         // Filter to only include data up to yesterday
         views[channelId] = channelViews.filter(item => item.date <= yesterdayStr);
@@ -356,8 +383,13 @@ export const YoutubeProvider: React.FC<{children: React.ReactNode}> = ({ childre
         }
       });
       
-      console.log("Loaded views data:", views);
-      setViewsData(views);
+      // Merge with existing data, preserving real YouTube data if available
+      setViewsData(prev => ({
+        ...prev,
+        ...views
+      }));
+      
+      console.log("Loaded views data:", {...views, ...viewsData});
     } catch (error) {
       console.error("Error loading views data:", error);
     }
@@ -367,6 +399,29 @@ export const YoutubeProvider: React.FC<{children: React.ReactNode}> = ({ childre
   const triggerDailyViewsUpdate = async () => {
     try {
       setIsLoading(true);
+      
+      // First try to get real YouTube Analytics data
+      if (ownChannel) {
+        try {
+          const { data: analyticsData, error: analyticsError } = await fetchYouTubeAnalytics();
+          
+          if (!analyticsError && Array.isArray(analyticsData) && analyticsData.length > 0) {
+            // We have real YouTube Analytics data
+            setViewsData(prev => ({
+              ...prev,
+              [ownChannel.id]: analyticsData
+            }));
+            
+            toast.success("Updated with real YouTube Analytics data");
+            setIsLoading(false);
+            return;
+          }
+        } catch (error) {
+          console.error("Error fetching YouTube Analytics:", error);
+        }
+      }
+      
+      // Fallback to the edge function for mock data
       const { error } = await supabase.functions.invoke('daily-views-tracker', {});
       
       if (error) throw error;

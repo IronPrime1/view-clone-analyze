@@ -40,6 +40,18 @@ const Dashboard: React.FC = () => {
       return [];
     }
     
+    // Check if any channel has actual data
+    let hasActualData = false;
+    Object.values(viewsData).forEach(channelData => {
+      if (channelData && channelData.length > 0) {
+        hasActualData = true;
+      }
+    });
+    
+    if (!hasActualData) {
+      return [];
+    }
+    
     // Get all dates from all channels
     const allDates: string[] = [];
     Object.values(viewsData).forEach(channelData => {
@@ -137,6 +149,9 @@ const Dashboard: React.FC = () => {
   
   // Check if we have actual top videos data
   const hasTopVideosData = topVideos.length > 0;
+
+  // Check if we specifically have user channel data
+  const hasUserChannelData = ownChannel && viewsData[ownChannel.id] && viewsData[ownChannel.id].length > 0;
   
   return (
     <div className="space-y-6 px-2 pb-2">
@@ -239,39 +254,32 @@ const Dashboard: React.FC = () => {
         </Card>
       )}
       
-      {/* Top Videos Card - Simplified version */}
+      {/* Simplified Top Videos Card */}
       {ownChannel && hasTopVideosData && (
         <Card className="shadow-sm">
           <CardHeader className="pb-2">
             <CardTitle className="text-lg">Top Performing Videos</CardTitle>
           </CardHeader>
           <CardContent className="pt-0">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="flex flex-wrap gap-3">
               {topVideos.slice(0, 3).map((video) => (
-                <div key={video.id} className="bg-accent/20 p-2 rounded-lg flex flex-col">
-                  <div className="relative mb-2">
-                    <img 
-                      src={video.thumbnail}
-                      alt={video.title}
-                      className="w-full h-24 object-cover rounded-md"
-                    />
+                <div key={video.id} className="bg-accent/10 p-2 rounded-lg flex-1 min-w-[180px]">
+                  <div className="flex gap-2 items-center mb-1">
                     {video.isShort && (
-                      <span className="absolute top-1 right-1 bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full">
+                      <span className="bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full">
                         Short
                       </span>
                     )}
+                    <h4 className="text-xs font-medium line-clamp-1 flex-1">{video.title}</h4>
                   </div>
-                  <h4 className="font-medium text-sm line-clamp-1">{video.title}</h4>
-                  <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
-                    <div className="flex items-center gap-1">
-                      <Eye className="h-3 w-3" />
-                      <span>{formatViewCount(video.viewCount)}</span>
-                    </div>
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <Eye className="h-3 w-3" />
+                    <span className="font-medium">{formatViewCount(video.viewCount)}</span>
                     <a 
                       href={`https://youtube.com/watch?v=${video.id}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+                      className="ml-auto text-xs text-primary hover:underline flex items-center gap-1"
                     >
                       <PlaySquare className="h-3 w-3" />
                       Watch
@@ -368,14 +376,17 @@ const Dashboard: React.FC = () => {
               </ResponsiveContainer>
             ) : (
               <div className="flex items-center justify-center h-full">
-                <p className="text-muted-foreground text-center">No view data available yet. Data will appear after collecting at least one day of data.</p>
+                <p className="text-muted-foreground text-center">
+                  {isLoading ? "Loading data..." : "No real view data available."}
+                </p>
               </div>
             )}
           </div>
-          {!hasViewData && (
+          {!hasUserChannelData && ownChannel && (
             <div className="flex justify-center mt-2">
-              <Button variant="outline" size="sm" onClick={triggerDailyViewsUpdate} className="text-xs">
-                <RefreshCw className="h-3 w-3 mr-1" /> Generate View Data
+              <Button variant="outline" size="sm" onClick={triggerDailyViewsUpdate} disabled={isLoading} className="text-xs">
+                <RefreshCw className={`h-3 w-3 mr-1 ${isLoading ? 'animate-spin' : ''}`} /> 
+                Fetch Real Data
               </Button>
             </div>
           )}
