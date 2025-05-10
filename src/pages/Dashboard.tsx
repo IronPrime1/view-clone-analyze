@@ -306,7 +306,7 @@ const Dashboard: React.FC = () => {
                   <YAxis 
                     fontSize={10} 
                     width={40} 
-                    tickFormatter={formatViewCount}
+                    tickFormatter={(value: number) => formatViewCount(value)}
                     tick={{fontSize: 10}}
                   />
                   <Tooltip content={({ active, payload, label }) => {
@@ -320,7 +320,7 @@ const Dashboard: React.FC = () => {
                                 <div className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.color }} />
                                 <p className="text-xs text-muted-foreground">{entry.name}</p>
                               </div>
-                              <p className="font-mono text-xs font-medium">{formatViewCount(entry.value)} views</p>
+                              <p className="font-mono text-xs font-medium">{formatViewCount(Number(entry.value))} views</p>
                             </div>
                           ))}
                         </div>

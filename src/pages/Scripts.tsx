@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { ExternalLink, Trash2, Clipboard, Download, Save } from 'lucide-react';
+import { ExternalLink, Trash2, Clipboard, Download } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '../integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
@@ -27,30 +27,30 @@ const Scripts: React.FC = () => {
   }, []);
 
   // Handle copy to clipboard
-    const handleCopyScript = () => {
-      if (!generatedScript) return;
-      
-      navigator.clipboard.writeText(generatedScript)
-        .then(() => toast.success("Copied to clipboard"))
-        .catch(() => toast.error("Failed to copy to clipboard"));
-    };
+  const handleCopyScript = (content: string) => {
+    if (!content) return;
     
-    // Handle download script
-    const handleDownloadScript = () => {
-      if (!generatedScript) return;
-      
-      const blob = new Blob([generatedScript], { type: 'text/plain' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `script-${selectedVideo}-${new Date().toISOString().split('T')[0]}.md`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-      
-      toast.success("Script downloaded");
-    };
+    navigator.clipboard.writeText(content)
+      .then(() => toast.success("Copied to clipboard"))
+      .catch(() => toast.error("Failed to copy to clipboard"));
+  };
+  
+  // Handle download script
+  const handleDownloadScript = (content: string, videoId: string) => {
+    if (!content) return;
+    
+    const blob = new Blob([content], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `script-${videoId}-${new Date().toISOString().split('T')[0]}.md`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    toast.success("Script downloaded");
+  };
   
   const fetchScripts = async () => {
     setIsLoading(true);
@@ -197,7 +197,7 @@ const Scripts: React.FC = () => {
                 <Button 
                   variant="outline" 
                   className="flex-1"
-                  onClick={handleCopyScript}
+                  onClick={() => handleCopyScript(script.content)}
                 >
                   <Clipboard className="mr-2 h-4 w-4" />
                   Copy
@@ -205,7 +205,7 @@ const Scripts: React.FC = () => {
                 <Button 
                   variant="default" 
                   className="flex-1"
-                  onClick={handleDownloadScript}
+                  onClick={() => handleDownloadScript(script.content, script.video_id)}
                 >
                   <Download className="mr-2 h-4 w-4" />
                   Download
