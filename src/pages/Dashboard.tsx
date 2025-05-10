@@ -257,35 +257,34 @@ const Dashboard: React.FC = () => {
       {/* Simplified Top Videos Card */}
       {ownChannel && hasTopVideosData && (
         <Card className="shadow-sm">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg">Top Performing Videos</CardTitle>
+          <CardHeader className="pb-3 border-b pt-3 mt-0">
+            <CardTitle className="text-lg text-center">Top Videos</CardTitle>
           </CardHeader>
-          <CardContent className="pt-0">
-            <div className="flex flex-wrap gap-3">
+          <CardContent className="pt-2 pb-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1">
               {topVideos.slice(0, 3).map((video) => (
-                <div key={video.id} className="bg-accent/10 p-2 rounded-lg flex-1 min-w-[180px]">
-                  <div className="flex gap-2 items-center mb-1">
-                    {video.isShort && (
-                      <span className="bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full">
-                        Short
-                      </span>
-                    )}
-                    <h4 className="text-xs font-medium line-clamp-1 flex-1">{video.title}</h4>
+                <a
+                  key={video.id}
+                  href={`https://youtube.com/watch?v=${video.id}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="bg-accent/10 hover:bg-accent/20 transition-colors py-2 rounded-xl flex flex-col gap-2"
+                >
+                  <div className="flex gap-3 items-start">
+                    <img
+                      src={video.thumbnail}
+                      alt={video.title}
+                      className="w-24 h-16 sm:w-36 sm:h-24 object-cover rounded-md"
+                    />
+                    <div className="flex flex-col">
+                    <h4 className="text-sm font-semibold line-clamp-2 flex-1">{video.title}</h4>
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground pt-1">
+                    <Eye className="h-3.5 w-3.5" />
+                    <span className="font-medium text-sm">{formatViewCount(video.viewCount)}</span> 
+                    </div>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <Eye className="h-3 w-3" />
-                    <span className="font-medium">{formatViewCount(video.viewCount)}</span>
-                    <a 
-                      href={`https://youtube.com/watch?v=${video.id}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="ml-auto text-xs text-primary hover:underline flex items-center gap-1"
-                    >
-                      <PlaySquare className="h-3 w-3" />
-                      Watch
-                    </a>
-                  </div>
-                </div>
+                </a>
               ))}
             </div>
           </CardContent>
@@ -296,7 +295,7 @@ const Dashboard: React.FC = () => {
         <CardHeader className="pb-3 pt-3 mt-0">
           <CardTitle className="text-lg text-center">Views Comparison</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pr-3 pl-0 pt-1 pb-0">
           <div className="sm:h-[200px] h-[150px]">
             {hasViewData ? (
               <ResponsiveContainer width="100%" height="100%">
