@@ -1,21 +1,37 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { useYoutube } from '../contexts/YoutubeContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../components/ui/dialog';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
-import { PlusCircle, RefreshCw, Upload, User } from 'lucide-react';
+import { PlusCircle, RefreshCw, Upload, User, PlaySquare, Eye, ThumbsUp, MessageSquare } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 
 const Dashboard: React.FC = () => {
-  const { ownChannel, competitors, viewsData, addCompetitor, refreshData, isLoading, login } = useYoutube();
+  const { ownChannel, competitors, viewsData, topVideos, addCompetitor, refreshData, isLoading, login, triggerDailyViewsUpdate } = useYoutube();
   const [channelInput, setChannelInput] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
   const navigate = useNavigate();
+  
+  // Effect to trigger daily views update when the component mounts
+  useEffect(() => {
+    // Only run once at page load
+    const runOnce = async () => {
+      // Check if there is at least one channel
+      if (ownChannel || competitors.length > 0) {
+        // Wait a bit for other data to load first
+        setTimeout(async () => {
+          await triggerDailyViewsUpdate();
+        }, 1000);
+      }
+    };
+    
+    runOnce();
+  }, [ownChannel, competitors.length]);
   
   // Format chart data from viewsData
   const prepareChartData = () => {
@@ -24,21 +40,25 @@ const Dashboard: React.FC = () => {
       return [];
     }
     
-    // Get all dates from own channel or first competitor
-    const dateSource = ownChannel && viewsData[ownChannel.id] 
-      ? viewsData[ownChannel.id]
-      : competitors.length > 0 && viewsData[competitors[0].id]
-        ? viewsData[competitors[0].id]
-        : [];
-        
-    const dates = dateSource.map(d => d.date);
-      
-    if (dates.length === 0) {
+    // Get all dates from all channels
+    const allDates: string[] = [];
+    Object.values(viewsData).forEach(channelData => {
+      channelData.forEach(item => {
+        if (!allDates.includes(item.date)) {
+          allDates.push(item.date);
+        }
+      });
+    });
+    
+    // Sort dates
+    allDates.sort();
+    
+    if (allDates.length === 0) {
       return [];
     }
     
     // Prepare chart data with dates and views for each channel
-    return dates.map(date => {
+    return allDates.map(date => {
       const dataPoint: any = { date };
       
       // Add own channel data
@@ -86,6 +106,22 @@ const Dashboard: React.FC = () => {
       .catch(err => toast.error("Failed to connect YouTube channel"));
   };
   
+  // Format view counts for better readability
+  const formatViewCount = (views: number) => {
+    if (views >= 1000000) {
+      return `${(views / 1000000).toFixed(1)}M`;
+    } else if (views >= 1000) {
+      return `${(views / 1000).toFixed(1)}K`;
+    }
+    return views.toString();
+  };
+  
+  // Format dates for better readability
+  const formatDate = (dateStr: string) => {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  };
+  
   return (
     <div className="space-y-6 px-2 pb-2">
       <div className="flex items-center justify-between">
@@ -94,19 +130,19 @@ const Dashboard: React.FC = () => {
         {/* Action buttons */}
         <div className="flex gap-2">
           {!ownChannel && (
-            <Button onClick={handleConnectYoutube} className="bg-youtube-red hover:bg-youtube-red/90 h-8 w-10 sm:h-[100%] sm:w-[100%]">
-              <Upload className="h-2 w-2" />
+            <Button onClick={handleConnectYoutube} className="bg-youtube-red hover:bg-youtube-red/90 h-8 w-10 sm:w-auto sm:px-3">
+              <Upload className="h-4 w-4 sm:mr-2" />
               <span className="hidden sm:inline">Add Your Channel</span>
             </Button>
           )}
           
-          <Button onClick={() => setDialogOpen(true)} className="h-8 w-10 sm:h-[100%] sm:w-[100%]">
-            <PlusCircle className="h-2 w-2" />
+          <Button onClick={() => setDialogOpen(true)} size="sm" className="h-8 w-10 sm:w-auto sm:px-3">
+            <PlusCircle className="h-4 w-4 sm:mr-2" />
             <span className="hidden sm:inline">Add Competitor</span>
           </Button>
           
-          <Button variant="outline" onClick={refreshData} disabled={isLoading} className="h-8 w-10 sm:h-[100%] sm:w-[100%]">
-            <RefreshCw className={`h-2 w-2 ${isLoading ? 'animate-spin' : ''}`} />
+          <Button variant="outline" onClick={refreshData} disabled={isLoading} size="sm" className="h-8 w-10 sm:w-auto sm:px-3">
+            <RefreshCw className={`h-4 w-4 sm:mr-2 ${isLoading ? 'animate-spin' : ''}`} />
             <span className="hidden sm:inline">Refresh</span>
           </Button>
         </div>
@@ -187,12 +223,68 @@ const Dashboard: React.FC = () => {
           </Card>
         )}
       
+      {/* Top Videos Card - Only show when user has connected their channel */}
+      {ownChannel && topVideos.length > 0 && (
+        <Card className="shadow-sm">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg">Your Top Performing Videos</CardTitle>
+            <CardDescription>Videos with the highest view counts</CardDescription>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <div className="space-y-4">
+              {topVideos.map((video, index) => (
+                <div key={video.id} className="flex gap-3 bg-accent/20 p-3 rounded-lg">
+                  <div className="relative flex-shrink-0">
+                    <img 
+                      src={video.thumbnail}
+                      alt={video.title}
+                      className="w-20 h-20 sm:w-24 sm:h-24 object-cover rounded-md"
+                    />
+                    {video.isShort && (
+                      <span className="absolute top-1 right-1 bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full">
+                        Short
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex-1 overflow-hidden">
+                    <h4 className="font-medium text-sm line-clamp-2">{video.title}</h4>
+                    <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                      <div className="flex items-center gap-1">
+                        <Eye className="h-3 w-3" />
+                        <span>{formatViewCount(video.viewCount)} views</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <ThumbsUp className="h-3 w-3" />
+                        <span>{formatViewCount(video.likeCount)} likes</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <MessageSquare className="h-3 w-3" />
+                        <span>{formatViewCount(video.commentCount)} comments</span>
+                      </div>
+                    </div>
+                    <a 
+                      href={`https://youtube.com/watch?v=${video.id}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 mt-2 text-xs text-primary hover:underline"
+                    >
+                      <PlaySquare className="h-3 w-3" />
+                      Watch on YouTube
+                    </a>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+      
       <Card className="shadow-sm">
-        <CardHeader className="pb-4 pt-4 mt-0">
+        <CardHeader className="pb-3 pt-3 mt-0">
           <CardTitle className="text-lg text-center">Views Comparison - Last 7 Days</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="sm:h-[300px] h-[200px]">
+          <div className="sm:h-[250px] h-[180px]">
             {chartData.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart
@@ -201,24 +293,34 @@ const Dashboard: React.FC = () => {
                     top: 5,
                     right: 20,
                     left: 0,
-                    bottom: 5,
+                    bottom: 20,
                   }}
                 >
                   <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
-                  <XAxis dataKey="date" fontSize={12} />
-                  <YAxis fontSize={12} width={40} />
+                  <XAxis 
+                    dataKey="date" 
+                    fontSize={10} 
+                    tickFormatter={formatDate}
+                    tick={{fontSize: 10}}
+                  />
+                  <YAxis 
+                    fontSize={10} 
+                    width={40} 
+                    tickFormatter={formatViewCount}
+                    tick={{fontSize: 10}}
+                  />
                   <Tooltip content={({ active, payload, label }) => {
                     if (active && payload?.length) {
                       return (
                         <div className="bg-background border border-border p-3 rounded-lg shadow-lg">
-                          <p className="font-medium mb-2">{label}</p>
+                          <p className="font-medium mb-2">{formatDate(label)}</p>
                           {payload.map((entry, index) => (
                             <div key={index} className="flex justify-between items-center gap-4 mb-1">
                               <div className="flex items-center gap-1">
                                 <div className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.color }} />
                                 <p className="text-xs text-muted-foreground">{entry.name}</p>
                               </div>
-                              <p className="font-mono text-xs font-medium">{entry.value.toLocaleString()} views</p>
+                              <p className="font-mono text-xs font-medium">{formatViewCount(entry.value)} views</p>
                             </div>
                           ))}
                         </div>
@@ -226,10 +328,14 @@ const Dashboard: React.FC = () => {
                     }
                     return null;
                   }} />
-                  <Legend iconSize={8} iconType="circle" wrapperStyle={{ fontSize: '12px', paddingTop: '8px' }} />
+                  <Legend 
+                    iconSize={8} 
+                    iconType="circle" 
+                    wrapperStyle={{ fontSize: '10px', paddingTop: '8px' }} 
+                  />
                   
                   {/* Own channel line */}
-                  {ownChannel && (
+                  {ownChannel && viewsData[ownChannel.id] && (
                     <Line
                       type="monotone"
                       dataKey={ownChannel.title || 'Your Channel'}
@@ -242,23 +348,32 @@ const Dashboard: React.FC = () => {
                   
                   {/* Competitor lines */}
                   {competitors.map((comp, index) => (
-                    <Line
-                      key={comp.id}
-                      type="monotone"
-                      dataKey={comp.title}
-                      stroke={getLineColor(index + 1)}
-                      strokeWidth={1.5}
-                      dot={{ r: 2 }}
-                    />
+                    viewsData[comp.id] && (
+                      <Line
+                        key={comp.id}
+                        type="monotone"
+                        dataKey={comp.title}
+                        stroke={getLineColor(index + 1)}
+                        strokeWidth={1.5}
+                        dot={{ r: 2 }}
+                      />
+                    )
                   ))}
                 </LineChart>
               </ResponsiveContainer>
             ) : (
               <div className="flex items-center justify-center h-full">
-                <p className="text-muted-foreground">No view data available. Add competitors to see comparison.</p>
+                <p className="text-muted-foreground">No view data available yet. Data will appear after 24 hours.</p>
               </div>
             )}
           </div>
+          {chartData.length === 0 && (
+            <div className="flex justify-center mt-2">
+              <Button variant="outline" size="sm" onClick={triggerDailyViewsUpdate} className="text-xs">
+                <RefreshCw className="h-3 w-3 mr-1" /> Get View Data
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
       

@@ -47,6 +47,7 @@ interface YoutubeContextType {
   isLoading: boolean;
   ownChannel: Channel | null;
   competitors: Channel[];
+  topVideos: Video[];
   viewsData: ViewsData;
   login: () => Promise<void>;
   logout: () => Promise<void>;
@@ -54,6 +55,7 @@ interface YoutubeContextType {
   removeCompetitor: (id: string) => Promise<void>;
   refreshData: () => Promise<void>;
   getSavedScripts: (videoId: string) => SavedScript[];
+  triggerDailyViewsUpdate: () => Promise<void>;
 }
 
 const YoutubeContext = createContext<YoutubeContextType | undefined>(undefined);
@@ -73,6 +75,7 @@ export const YoutubeProvider: React.FC<{children: React.ReactNode}> = ({ childre
   const [competitors, setCompetitors] = useState<Channel[]>([]);
   const [viewsData, setViewsData] = useState<ViewsData>({});
   const [savedScripts, setSavedScripts] = useState<{[videoId: string]: SavedScript[]}>({});
+  const [topVideos, setTopVideos] = useState<Video[]>([]);
   const sessionLoadedRef = useRef(false);
   
   // Check if user is authenticated
@@ -106,6 +109,7 @@ export const YoutubeProvider: React.FC<{children: React.ReactNode}> = ({ childre
             setCompetitors([]);
             setViewsData({});
             setSavedScripts({});
+            setTopVideos([]);
           }
         }
       );
@@ -117,7 +121,6 @@ export const YoutubeProvider: React.FC<{children: React.ReactNode}> = ({ childre
       };
     }, []);
 
-  
   // Load saved scripts for a video
   const loadSavedScripts = async () => {
     try {
@@ -171,6 +174,10 @@ export const YoutubeProvider: React.FC<{children: React.ReactNode}> = ({ childre
       
       if (profile?.youtube_connected) {
         await loadOwnChannel(profile);
+        // If connected, also load top videos for the user's channel
+        if (profile.youtube_channel_id) {
+          await loadTopVideos(profile.youtube_channel_id);
+        }
       }
       
       // Load competitor channels
@@ -187,6 +194,28 @@ export const YoutubeProvider: React.FC<{children: React.ReactNode}> = ({ childre
       toast.error("Failed to load your data");
     } finally {
       setIsLoading(false);
+    }
+  };
+  
+  // Load top videos for a channel
+  const loadTopVideos = async (channelId: string) => {
+    try {
+      const { data, error } = await supabase.functions.invoke('youtube-fetch', {
+        body: {
+          channelId: channelId,
+          action: 'get_channel_data'
+        }
+      });
+      
+      if (error) throw error;
+      
+      if (data?.channel?.videos && Array.isArray(data.channel.videos)) {
+        // Sort by view count descending
+        const sortedVideos = [...data.channel.videos].sort((a, b) => b.viewCount - a.viewCount);
+        setTopVideos(sortedVideos.slice(0, 3)); // Take top 3
+      }
+    } catch (error) {
+      console.error("Error loading top videos:", error);
     }
   };
   
@@ -288,8 +317,8 @@ export const YoutubeProvider: React.FC<{children: React.ReactNode}> = ({ childre
       const { data, error } = await supabase
         .from('daily_views')
         .select('channel_id, date, views')
-        .gte('date', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0])
-        .order('date');
+        .gte('date', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0])
+        .order('date', { ascending: true });
       
       if (error) throw error;
       
@@ -306,9 +335,38 @@ export const YoutubeProvider: React.FC<{children: React.ReactNode}> = ({ childre
         });
       });
       
+      // Get the last 7 days of data for each channel
+      Object.keys(views).forEach(channelId => {
+        const channelViews = views[channelId];
+        if (channelViews.length > 7) {
+          views[channelId] = channelViews.slice(-7);
+        }
+      });
+      
       setViewsData(views);
     } catch (error) {
       console.error("Error loading views data:", error);
+    }
+  };
+
+  // Trigger the daily views tracker edge function
+  const triggerDailyViewsUpdate = async () => {
+    try {
+      const { error } = await supabase.functions.invoke('daily-views-tracker', {});
+      
+      if (error) throw error;
+      
+      toast.success("Daily views update initiated");
+      
+      // Refresh views data after a delay to allow the edge function to complete
+      setTimeout(() => {
+        loadViewsData();
+      }, 3000);
+      
+      return;
+    } catch (error) {
+      console.error("Error triggering daily views update:", error);
+      toast.error("Failed to update daily views");
     }
   };
   
@@ -482,8 +540,15 @@ export const YoutubeProvider: React.FC<{children: React.ReactNode}> = ({ childre
           
         if (profile) {
           await loadOwnChannel(profile);
+          // Also refresh top videos
+          if (profile.youtube_channel_id) {
+            await loadTopVideos(profile.youtube_channel_id);
+          }
         }
       }
+      
+      // Also trigger daily views update
+      await triggerDailyViewsUpdate();
       
       toast.success("Data refreshed successfully");
     } catch (error) {
@@ -499,13 +564,15 @@ export const YoutubeProvider: React.FC<{children: React.ReactNode}> = ({ childre
     isLoading,
     ownChannel,
     competitors,
+    topVideos,
     viewsData,
     login,
     logout,
     addCompetitor,
     removeCompetitor,
     refreshData,
-    getSavedScripts
+    getSavedScripts,
+    triggerDailyViewsUpdate
   };
   
   return (
