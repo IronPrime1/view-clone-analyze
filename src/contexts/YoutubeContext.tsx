@@ -83,6 +83,7 @@ export const YoutubeProvider: React.FC<{children: React.ReactNode}> = ({ childre
   
   // Check if user is authenticated
   useEffect(() => {
+    console.log("🔁 useEffect ran - checking user session");
       const checkUser = async () => {
         try {
           const { data: { session } } = await supabase.auth.getSession();
