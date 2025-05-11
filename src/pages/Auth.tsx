@@ -60,13 +60,13 @@ const Auth = () => {
           
           // Remove any query parameters from the URL to prevent "page not found" issues
           // This modification helps clean up the URL before processing the auth
-          window.history.replaceState({}, document.title, '/auth');
+          window.history.replaceState({}, document.title, '/youtubeauth');
           
           // Call our edge function to exchange the code for tokens
           const { data, error } = await supabase.functions.invoke('youtube-auth', {
             body: {
               code,
-              redirectUri: `${window.location.origin}/auth`
+              redirectUri: `${window.location.origin}/youtubeauth`
             }
           });
           
