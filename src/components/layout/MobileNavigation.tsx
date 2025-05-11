@@ -7,7 +7,7 @@ const MobileNavigation: React.FC = () => {
   return (
     <nav className="mobile-nav fixed bottom-0 left-0 right-0 bg-background border-t flex justify-around items-center px-2 md:hidden z-10">
       <NavLink 
-        to="/" 
+        to="/dashboard" 
         className={({ isActive }) => 
           `flex flex-col items-center py-2 px-2 ${
             isActive ? 'text-primary' : 'text-muted-foreground'
@@ -20,7 +20,7 @@ const MobileNavigation: React.FC = () => {
       </NavLink>
       
       <NavLink 
-        to="/competitors" 
+        to="/dashboard/competitors" 
         className={({ isActive }) => 
           `flex flex-col items-center py-2 px-2 ${
             isActive ? 'text-primary' : 'text-muted-foreground'
@@ -32,7 +32,7 @@ const MobileNavigation: React.FC = () => {
       </NavLink>
       
       <NavLink 
-        to="/clone" 
+        to="/dashboard/clone" 
         className={({ isActive }) => 
           `flex flex-col items-center py-2 px-2 ${
             isActive ? 'text-primary' : 'text-muted-foreground'
@@ -44,7 +44,7 @@ const MobileNavigation: React.FC = () => {
       </NavLink>
       
       <NavLink 
-        to="/scripts" 
+        to="/dashboard/scripts" 
         className={({ isActive }) => 
           `flex flex-col items-center py-2 px-2 ${
             isActive ? 'text-primary' : 'text-muted-foreground'

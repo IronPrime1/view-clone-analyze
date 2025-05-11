@@ -1,19 +1,19 @@
 
 import React, { useEffect, useState } from 'react';
-import { Outlet, useNavigate } from 'react-router-dom';
+import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import MobileNavigation from './MobileNavigation';
 import DesktopSidebar from './DesktopSidebar';
 import { supabase } from '../../integrations/supabase/client';
 import { useYoutube } from '../../contexts/YoutubeContext';
 import AuthRequired from '../auth/AuthRequired';
-import { Youtube, Menu, LayoutDashboard, Users, Clipboard as ClipboardIcon, Code } from 'lucide-react';
+import { Menu } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { useLocation } from 'react-router-dom';
 
 const Layout: React.FC = () => {
   const { isLoading, ownChannel } = useYoutube();
   const navigate = useNavigate();
+  const location = useLocation();
   const [open, setOpen] = useState(false);
   
   useEffect(() => {
@@ -89,6 +89,7 @@ const Layout: React.FC = () => {
                   </div>
                 )}
                 <ul className="space-y-2">
+                  {/* Updated navigation links */}
                   <li>
                     <Button 
                       asChild 
@@ -96,8 +97,8 @@ const Layout: React.FC = () => {
                       className="w-full justify-start"
                       onClick={() => setOpen(false)}
                     >
-                      <a href="/">
-                        <LayoutDashboard className="h-5 w-5 mr-3" />
+                      <a href="/dashboard">
+                        <span className="h-5 w-5 mr-3">📊</span>
                         Dashboard
                       </a>
                     </Button>
@@ -109,8 +110,8 @@ const Layout: React.FC = () => {
                       className="w-full justify-start"
                       onClick={() => setOpen(false)}
                     >
-                      <a href="/competitors">
-                        <Users className="h-5 w-5 mr-3" />
+                      <a href="/dashboard/competitors">
+                        <span className="h-5 w-5 mr-3">👥</span>
                         Competitors
                       </a>
                     </Button>
@@ -122,8 +123,8 @@ const Layout: React.FC = () => {
                       className="w-full justify-start"
                       onClick={() => setOpen(false)}
                     >
-                      <a href="/clone">
-                        <ClipboardIcon className="h-5 w-5 mr-3" />
+                      <a href="/dashboard/clone">
+                        <span className="h-5 w-5 mr-3">📝</span>
                         Clone
                       </a>
                     </Button>
@@ -135,8 +136,8 @@ const Layout: React.FC = () => {
                       className="w-full justify-start"
                       onClick={() => setOpen(false)}
                     >
-                      <a href="/scripts">
-                        <Code className="h-5 w-5 mr-3" />
+                      <a href="/dashboard/scripts">
+                        <span className="h-5 w-5 mr-3">📜</span>
                         Scripts
                       </a>
                     </Button>

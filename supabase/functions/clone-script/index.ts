@@ -64,18 +64,18 @@ async function fetchVideoDetails(videoId: string, apiKey: string) {
 }
 
 // Function to generate a video script based on competitor video
-function generateScript(competitorVideo: any, userVideo: any | null) {
+function generateScript(videoToClone: any, userVideo: any | null) {
   // Generate intro
-  const intro = `# ${competitorVideo.title}\n\n## Introduction\n`;
+  const intro = `# ${videoToClone.title}\n\n## Introduction\n`;
   
   // Generate hook
-  const hook = `Hello everyone, welcome back to the channel. Today we're going to be talking about ${competitorVideo.title.toLowerCase()}.\n\n`;
+  const hook = `Hello everyone, welcome back to the channel. Today we're going to be talking about ${videoToClone.title.toLowerCase()}.\n\n`;
   
   // Generate main content
   const mainContent = `## Main Content\n\n`;
   
   // Generate description content
-  let descriptionParagraphs = competitorVideo.description
+  let descriptionParagraphs = videoToClone.description
     .split('\n\n')
     .filter((p: string) => p.length > 30)
     .slice(0, 3)
@@ -94,8 +94,8 @@ function generateScript(competitorVideo: any, userVideo: any | null) {
     `\n\n## Personal Insights\nIn my previous video on ${userVideo.title}, we talked about similar concepts. Let's build upon those ideas with some new insights...\n\n` : '';
   
   // Generate tags section
-  const tags = competitorVideo.tags && competitorVideo.tags.length > 0 ?
-    `\n\n## Tags\n${competitorVideo.tags.slice(0, 8).map((tag: string) => `#${tag.replace(/\s+/g, '')}`).join(' ')}` :
+  const tags = videoToClone.tags && videoToClone.tags.length > 0 ?
+    `\n\n## Tags\n${videoToClone.tags.slice(0, 8).map((tag: string) => `#${tag.replace(/\s+/g, '')}`).join(' ')}` :
     '';
   
   // Combine all sections
@@ -110,23 +110,23 @@ serve(async (req) => {
 
   try {
     // Parse the request body
-    const { competitorVideoUrl, userVideoUrl } = await req.json();
+    const { videoUrl, userVideoUrl } = await req.json();
     
     // Validate request data
-    if (!competitorVideoUrl) {
+    if (!videoUrl) {
       return new Response(
-        JSON.stringify({ error: "Competitor video URL is required" }),
+        JSON.stringify({ error: "Video URL is required" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
     
     // Extract video IDs
-    const competitorVideoId = extractVideoId(competitorVideoUrl);
+    const mainVideoId = extractVideoId(videoUrl);
     const userVideoId = userVideoUrl ? extractVideoId(userVideoUrl) : null;
     
-    if (!competitorVideoId) {
+    if (!mainVideoId) {
       return new Response(
-        JSON.stringify({ error: "Invalid competitor video URL or ID" }),
+        JSON.stringify({ error: "Invalid video URL or ID" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -142,7 +142,7 @@ serve(async (req) => {
     }
     
     // Fetch video details
-    const competitorVideo = await fetchVideoDetails(competitorVideoId, apiKey);
+    const mainVideo = await fetchVideoDetails(mainVideoId, apiKey);
     let userVideo = null;
     
     if (userVideoId) {
@@ -155,7 +155,7 @@ serve(async (req) => {
     }
     
     // Generate script
-    const script = generateScript(competitorVideo, userVideo);
+    const script = generateScript(mainVideo, userVideo);
     
     // Return success response
     return new Response(

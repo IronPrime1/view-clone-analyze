@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -11,13 +12,28 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
 
 const Clone: React.FC = () => {
-  const { competitors } = useYoutube();
+  const { competitors, ownChannel } = useYoutube();
   const [selectedCompetitor, setSelectedCompetitor] = useState<string | null>(null);
   const [selectedVideo, setSelectedVideo] = useState<string | null>(null);
   const [userVideoUrl, setUserVideoUrl] = useState('');
   const [generatedScript, setGeneratedScript] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [savedScripts, setSavedScripts] = useState<any[]>([]);
+  const [selectedTab, setSelectedTab] = useState('competitor');
+  const [ownVideos, setOwnVideos] = useState<any[]>([]);
+  const [selectedOwnVideo, setSelectedOwnVideo] = useState<string | null>(null);
+  
+  // Fetch user's videos on component mount
+  useEffect(() => {
+    if (ownChannel) {
+      // Extract videos from ownChannel if they exist
+      if (ownChannel.videos && Array.isArray(ownChannel.videos)) {
+        // Take the latest 10 videos
+        const latestVideos = ownChannel.videos.slice(0, 10);
+        setOwnVideos(latestVideos);
+      }
+    }
+  }, [ownChannel]);
   
   // Get videos for the selected competitor
   const getVideos = () => {
@@ -35,6 +51,11 @@ const Clone: React.FC = () => {
     return competitor?.videos?.find(v => v.id === id);
   };
   
+  // Get own video by ID
+  const getOwnVideoById = (id: string) => {
+    return ownVideos.find(v => v.id === id);
+  };
+  
   // Handle competitor selection change
   const handleCompetitorChange = (value: string) => {
     setSelectedCompetitor(value);
@@ -43,24 +64,47 @@ const Clone: React.FC = () => {
   
   // Handle generate script button click
   const handleGenerateScript = async () => {
-    if (!selectedVideo) {
-      toast.error("Please select a video first");
-      return;
+    let videoId: string | null = null;
+    let userVideoId: string | null = null;
+    
+    if (selectedTab === 'competitor') {
+      if (!selectedVideo) {
+        toast.error("Please select a competitor video first");
+        return;
+      }
+      videoId = selectedVideo;
+    } else {
+      if (!selectedOwnVideo) {
+        toast.error("Please select one of your videos first");
+        return;
+      }
+      videoId = selectedOwnVideo;
+    }
+    
+    // Get user video if provided
+    if (selectedTab === 'competitor' && selectedOwnVideo) {
+      userVideoId = selectedOwnVideo;
     }
     
     setIsGenerating(true);
     setGeneratedScript(null);
     
     try {
-      const video = getVideoById(selectedVideo);
+      const video = selectedTab === 'competitor' 
+        ? getVideoById(videoId) 
+        : getOwnVideoById(videoId);
+        
       if (!video) throw new Error("Video not found");
       
       const videourl = `https://www.youtube.com/watch?v=${video.id}`;
+      const userVideoUrl = userVideoId 
+        ? `https://www.youtube.com/watch?v=${userVideoId}` 
+        : null;
       
       const { data, error } = await supabase.functions.invoke('clone-script', {
         body: {
           videoUrl: videourl,
-          userScript: userVideoUrl || null
+          userVideoUrl: userVideoUrl
         }
       });
       
@@ -93,7 +137,7 @@ const Clone: React.FC = () => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `script-${selectedVideo}-${new Date().toISOString().split('T')[0]}.md`;
+    a.download = `script-${selectedVideo || selectedOwnVideo}-${new Date().toISOString().split('T')[0]}.md`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -104,7 +148,7 @@ const Clone: React.FC = () => {
   
   // Handle save script
   const handleSaveScript = async () => {
-    if (!generatedScript || !selectedVideo) return;
+    if (!generatedScript || (!selectedVideo && !selectedOwnVideo)) return;
     
     try {
       const { data: userData } = await supabase.auth.getUser();
@@ -119,7 +163,7 @@ const Clone: React.FC = () => {
         .from('saved_scripts')
         .insert({
           user_id: userId,
-          video_id: selectedVideo,
+          video_id: selectedVideo || selectedOwnVideo,
           content: generatedScript
         })
         .select();
@@ -138,7 +182,7 @@ const Clone: React.FC = () => {
   
   return (
     <div className="space-y-5 px-2">
-      <h1 className="text-xl font-bold">Clone Competitor Videos</h1>
+      <h1 className="text-xl font-bold">Clone Videos</h1>
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-1 space-y-4">
@@ -146,74 +190,155 @@ const Clone: React.FC = () => {
             <CardHeader className="pt-3 sm:pt-4 mt-0">
               <CardTitle className="text-xl">Select Content</CardTitle>
               <CardDescription>
-                Choose a competitor and video to clone
+                Choose a video to clone
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-2">
-              <div className="space-y-2">
-                <Label htmlFor="competitor">Competitor Channel</Label>
-                <Select
-                  value={selectedCompetitor || ''}
-                  onValueChange={handleCompetitorChange}
-                >
-                  <SelectTrigger id="competitor">
-                    <SelectValue placeholder="Select a channel" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {competitors.map(competitor => (
-                      <SelectItem key={competitor.id} value={competitor.id}>
-                        {competitor.title}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="video">Competitor Video</Label>
-                <Select
-                  value={selectedVideo || ''}
-                  onValueChange={setSelectedVideo}
-                  disabled={!selectedCompetitor}
-                >
-                  <SelectTrigger id="video">
-                    <SelectValue placeholder={
-                      !selectedCompetitor 
-                        ? "Select a channel first" 
-                        : "Select a video"
-                    } />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {getVideos().map(video => (
-                      <SelectItem key={video.id} value={video.id}>
-                        {video.isShort ? "[SHORT] " : ""}{video.title}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              {selectedVideo && getVideoById(selectedVideo) && (
-                <div className="pt-2">
-                  <div className="relative aspect-video rounded-lg overflow-hidden">
-                    <img 
-                      src={getVideoById(selectedVideo)?.thumbnail} 
-                      alt={getVideoById(selectedVideo)?.title}
-                      className="w-full h-full object-cover"
-                    />
+              <Tabs value={selectedTab} onValueChange={setSelectedTab} className="w-full">
+                <TabsList className="grid grid-cols-2 mb-4">
+                  <TabsTrigger value="competitor">Competitor</TabsTrigger>
+                  <TabsTrigger value="own">My Videos</TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="competitor" className="mt-0 pt-0">
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="competitor">Competitor Channel</Label>
+                      <Select
+                        value={selectedCompetitor || ''}
+                        onValueChange={handleCompetitorChange}
+                      >
+                        <SelectTrigger id="competitor">
+                          <SelectValue placeholder="Select a channel" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {competitors.map(competitor => (
+                            <SelectItem key={competitor.id} value={competitor.id}>
+                              {competitor.title}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="video">Competitor Video</Label>
+                      <Select
+                        value={selectedVideo || ''}
+                        onValueChange={setSelectedVideo}
+                        disabled={!selectedCompetitor}
+                      >
+                        <SelectTrigger id="video">
+                          <SelectValue placeholder={
+                            !selectedCompetitor 
+                              ? "Select a channel first" 
+                              : "Select a video"
+                          } />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {getVideos().map(video => (
+                            <SelectItem key={video.id} value={video.id}>
+                              {video.isShort ? "[SHORT] " : ""}{video.title}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    {/* Reference Section - Optional user video */}
+                    {ownVideos.length > 0 && (
+                      <div className="space-y-2 pt-4 border-t">
+                        <Label htmlFor="reference">Reference (Optional)</Label>
+                        <Select
+                          value={selectedOwnVideo || ''}
+                          onValueChange={setSelectedOwnVideo}
+                        >
+                          <SelectTrigger id="reference">
+                            <SelectValue placeholder="Select one of your videos (optional)" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {ownVideos.map(video => (
+                              <SelectItem key={video.id} value={video.id}>
+                                {video.title}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Adding your own video will help create more personalized content
+                        </p>
+                      </div>
+                    )}
+                    
+                    {selectedVideo && getVideoById(selectedVideo) && (
+                      <div className="pt-2">
+                        <div className="relative aspect-video rounded-lg overflow-hidden">
+                          <img 
+                            src={getVideoById(selectedVideo)?.thumbnail} 
+                            alt={getVideoById(selectedVideo)?.title}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                        <h3 className="mt-2 font-medium text-center">{getVideoById(selectedVideo)?.title}</h3>
+                        <p className="text-sm text-muted-foreground text-center">
+                          {getVideoById(selectedVideo)?.viewCount.toLocaleString()} views
+                        </p>
+                      </div>
+                    )}
                   </div>
-                  <h3 className="mt-2 font-medium text-center">{getVideoById(selectedVideo)?.title}</h3>
-                  <p className="text-sm text-muted-foreground text-center">
-                    {getVideoById(selectedVideo)?.viewCount.toLocaleString()} views
-                  </p>
-                </div>
-              )}
-              
+                </TabsContent>
+                
+                <TabsContent value="own" className="mt-0 pt-0">
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="ownVideo">Your Video</Label>
+                      <Select
+                        value={selectedOwnVideo || ''}
+                        onValueChange={setSelectedOwnVideo}
+                        disabled={ownVideos.length === 0}
+                      >
+                        <SelectTrigger id="ownVideo">
+                          <SelectValue placeholder={
+                            ownVideos.length === 0 
+                              ? "No videos available" 
+                              : "Select a video"
+                          } />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {ownVideos.map(video => (
+                            <SelectItem key={video.id} value={video.id}>
+                              {video.isShort ? "[SHORT] " : ""}{video.title}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    {selectedOwnVideo && getOwnVideoById(selectedOwnVideo) && (
+                      <div className="pt-2">
+                        <div className="relative aspect-video rounded-lg overflow-hidden">
+                          <img 
+                            src={getOwnVideoById(selectedOwnVideo)?.thumbnail} 
+                            alt={getOwnVideoById(selectedOwnVideo)?.title}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                        <h3 className="mt-2 font-medium text-center">{getOwnVideoById(selectedOwnVideo)?.title}</h3>
+                        <p className="text-sm text-muted-foreground text-center">
+                          {getOwnVideoById(selectedOwnVideo)?.viewCount.toLocaleString()} views
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </TabsContent>
+              </Tabs>
             </CardContent>
             <CardFooter>
               <Button 
                 onClick={handleGenerateScript} 
-                disabled={!selectedVideo || isGenerating}
+                disabled={(selectedTab === 'competitor' && !selectedVideo) || 
+                         (selectedTab === 'own' && !selectedOwnVideo) || 
+                         isGenerating}
                 className="w-full"
               >
                 {isGenerating ? (
@@ -237,7 +362,7 @@ const Clone: React.FC = () => {
             <CardHeader className="sm:pt-4 pt-3 mt-0 mb-0 pb-4 border-b">
               <CardTitle className="text-xl pt-0 mt-0">Generated Script</CardTitle>
               <CardDescription>
-                A customized script based on the competitor's content
+                A customized script based on the selected video content
               </CardDescription>
             </CardHeader>
             <CardContent className="flex-1 overflow-auto pt-6">

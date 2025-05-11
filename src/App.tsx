@@ -11,6 +11,7 @@ import Clone from "./pages/Clone";
 import Scripts from "./pages/Scripts";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
+import Landing from "./pages/Landing";
 import { YoutubeProvider } from "./contexts/YoutubeContext";
 
 // Add YouTube-specific color to Tailwind
@@ -26,14 +27,16 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <Routes>
+            <Route path="/" element={<Landing />} />
             <Route path="/auth" element={<Auth />} />
-            <Route path="/" element={<Layout />}>
+            <Route path="/dashboard" element={<Layout />}>
               <Route index element={<Dashboard />} />
               <Route path="competitors" element={<Competitors />} />
               <Route path="clone" element={<Clone />} />
               <Route path="scripts" element={<Scripts />} />
               <Route path="*" element={<NotFound />} />
             </Route>
+            <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
       </TooltipProvider>
