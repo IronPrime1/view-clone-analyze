@@ -1,4 +1,5 @@
 
+import React from 'react';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -21,28 +22,30 @@ import "./index.css";
 const queryClient = new QueryClient();
 
 const App = () => (
-  <BrowserRouter>
-    <QueryClientProvider client={queryClient}>
-      <YoutubeProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <Routes>
-            <Route path="/" element={<Landing />} />
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/dashboard" element={<Layout />}>
-              <Route index element={<Dashboard />} />
-              <Route path="competitors" element={<Competitors />} />
-              <Route path="clone" element={<Clone />} />
-              <Route path="scripts" element={<Scripts />} />
+  <React.StrictMode>
+    <BrowserRouter>
+      <QueryClientProvider client={queryClient}>
+        <YoutubeProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <Routes>
+              <Route path="/" element={<Landing />} />
+              <Route path="/auth" element={<Auth />} />
+              <Route path="/dashboard" element={<Layout />}>
+                <Route index element={<Dashboard />} />
+                <Route path="competitors" element={<Competitors />} />
+                <Route path="clone" element={<Clone />} />
+                <Route path="scripts" element={<Scripts />} />
+                <Route path="*" element={<NotFound />} />
+              </Route>
               <Route path="*" element={<NotFound />} />
-            </Route>
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </TooltipProvider>
-      </YoutubeProvider>
-    </QueryClientProvider>
-  </BrowserRouter>
+            </Routes>
+          </TooltipProvider>
+        </YoutubeProvider>
+      </QueryClientProvider>
+    </BrowserRouter>
+  </React.StrictMode>
 );
 
 export default App;
