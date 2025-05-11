@@ -19,7 +19,15 @@ import { YoutubeProvider } from "./contexts/YoutubeContext";
 import "./index.css";
 
 // Create a new QueryClient instance outside of the component
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+      staleTime: 1000 * 60 * 5,
+    },
+  },
+});
+
 
 const App = () => (
   <React.StrictMode>
