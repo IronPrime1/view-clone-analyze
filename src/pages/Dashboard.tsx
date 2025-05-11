@@ -17,22 +17,6 @@ const Dashboard: React.FC = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const navigate = useNavigate();
   
-  // Effect to trigger daily views update when the component mounts
-  useEffect(() => {
-    // Only run once at page load
-    const runOnce = async () => {
-      // Check if there is at least one channel
-      if (ownChannel || competitors.length > 0) {
-        // Wait a bit for other data to load first
-        setTimeout(async () => {
-          await triggerDailyViewsUpdate();
-        }, 1000);
-      }
-    };
-    
-    runOnce();
-  }, [ownChannel, competitors.length]);
-  
   // Format chart data from viewsData
   const prepareChartData = () => {
     // If there's no data, return empty array
