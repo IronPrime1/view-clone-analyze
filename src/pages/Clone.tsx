@@ -88,7 +88,7 @@ const Clone: React.FC = () => {
       const { data, error } = await supabase.functions.invoke('clone-script', {
         body: {
           videoUrl: videourl,
-          userVideoUrl: userVideoUrl
+          userUrl: userVideoUrl || null,
         }
       });
       
@@ -171,14 +171,8 @@ const Clone: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-1 space-y-4">
           <Card>
-            <CardHeader className="pt-3 sm:pt-4 mt-0">
-              <CardTitle className="text-xl">Select Content</CardTitle>
-              <CardDescription>
-                Choose a video to clone
-              </CardDescription>
-            </CardHeader>
             <CardContent className="space-y-2">
-              <div className="space-y-4">
+              <div className="space-y-4 pt-4">
                 <div className="space-y-2">
                   <Label htmlFor="competitor">Competitor Channel</Label>
                   <Select
@@ -224,7 +218,7 @@ const Clone: React.FC = () => {
                 
                 {/* Reference Video Section (showing up to 10 videos) */}
                 {ownVideos.length > 0 && (
-                  <div className="space-y-2 pt-4 border-t">
+                  <div className="space-y-2">
                     <Label htmlFor="reference">Reference (Optional)</Label>
                     <Select
                       value={selectedOwnVideo || ''}
@@ -241,9 +235,6 @@ const Clone: React.FC = () => {
                         ))}
                       </SelectContent>
                     </Select>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Adding your own video will help create more personalized content
-                    </p>
                   </div>
                 )}
                 

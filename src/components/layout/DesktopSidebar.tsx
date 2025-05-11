@@ -39,7 +39,7 @@ const DesktopSidebar: React.FC = () => {
           )}
             <li>
               <NavLink 
-                to="/" 
+                to="/dashboard" 
                 className={({ isActive }) => 
                   `flex items-center gap-3 p-3 rounded-md transition-colors ${
                     isActive 

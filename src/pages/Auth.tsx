@@ -110,6 +110,10 @@ const Auth = () => {
         if (error) throw error;
         
         toast.success("Logged in successfully");
+
+        // Redirect to the dashboard
+        navigate('/dashboard', { replace: true });
+        
       } else {
         const { data, error } = await supabase.auth.signUp({
           email,
