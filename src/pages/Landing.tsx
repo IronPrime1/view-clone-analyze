@@ -1,23 +1,20 @@
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useYoutube } from '../contexts/YoutubeContext';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Play, CheckCircle, BarChart2 } from 'lucide-react';
 
 const Landing: React.FC = () => {
   const { isAuthenticated, isLoading } = useYoutube();
   const navigate = useNavigate();
 
-  // Redirect to dashboard if already authenticated
-  useEffect(() => {
-    if (isAuthenticated && !isLoading) {
+  const handleAction = () => {
+    if (isAuthenticated) {
       navigate('/dashboard');
+    } else {
+      navigate('/auth');
     }
-  }, [isAuthenticated, isLoading, navigate]);
-
-  const handleGetStarted = () => {
-    navigate('/auth');
   };
 
   if (isLoading) {
@@ -29,7 +26,7 @@ const Landing: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#0f101a] via-[#171a2d] to-[#0d1129] text-white overflow-x-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-[#0a0c1b] via-[#171a2d] to-[#0d1129] text-white overflow-x-hidden">
       {/* Header */}
       <header className="container mx-auto px-4 py-6 flex justify-between items-center">
         <div className="flex items-center space-x-2">
@@ -37,58 +34,94 @@ const Landing: React.FC = () => {
           <h1 className="text-2xl font-bold">ScriptX</h1>
         </div>
         <Button 
-          onClick={handleGetStarted} 
+          onClick={handleAction} 
           variant="outline" 
           className="border-white/20 text-white hover:bg-white/10"
         >
-          Sign In
+          {isAuthenticated ? "Dashboard" : "Sign In"}
         </Button>
       </header>
 
       {/* Hero Section */}
       <section className="container mx-auto px-4 mt-12 md:mt-20 mb-20">
         <div className="max-w-4xl mx-auto text-center">
-          <h1 className="text-4xl md:text-6xl font-bold leading-tight bg-clip-text text-transparent bg-gradient-to-r from-white to-white/70">
+          <div className="inline-block px-4 py-1 mb-4 rounded-full bg-white/10 backdrop-blur-sm">
+            <span className="text-white/80 text-sm font-medium">AI-Powered YouTube Content Creation</span>
+          </div>
+          <h1 className="text-4xl md:text-6xl font-bold leading-tight bg-clip-text text-transparent bg-gradient-to-r from-purple-400 via-white to-blue-400">
             Create YouTube Scripts with AI
           </h1>
           <p className="mt-6 text-xl md:text-2xl text-white/80">
             Analyze competitors, clone successful videos, and generate engaging scripts for your YouTube channel
           </p>
-          <div className="mt-12">
+          <div className="mt-12 flex flex-col sm:flex-row gap-4 justify-center">
             <Button 
-              onClick={handleGetStarted}
+              onClick={handleAction}
               className="bg-gradient-to-r from-purple-600 to-blue-500 hover:from-purple-700 hover:to-blue-600 text-lg px-8 py-6 h-auto rounded-full"
             >
-              Get Started <ArrowRight className="ml-2 h-5 w-5" />
+              {isAuthenticated ? "Go to Dashboard" : "Get Started"} <ArrowRight className="ml-2 h-5 w-5" />
+            </Button>
+            <Button 
+              variant="outline" 
+              className="border-white/20 text-white hover:bg-white/10 text-lg px-8 py-6 h-auto rounded-full"
+              onClick={() => window.scrollTo({ top: document.getElementById('features')?.offsetTop, behavior: 'smooth' })}
+            >
+              <Play className="mr-2 h-5 w-5" /> Learn More
             </Button>
           </div>
         </div>
       </section>
 
       {/* Features Section */}
-      <section className="container mx-auto px-4 py-20">
-        <h2 className="text-3xl md:text-4xl font-bold text-center mb-16">Powerful Features</h2>
+      <section id="features" className="container mx-auto px-4 py-20">
+        <h2 className="text-3xl md:text-4xl font-bold text-center mb-4">Powerful Features</h2>
+        <p className="text-white/70 text-center max-w-2xl mx-auto mb-16">Transform your YouTube content strategy with our powerful AI tools</p>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
           {[
             {
               title: "Competitor Analysis",
-              description: "Track your competitors' performance and learn from their success"
+              description: "Track your competitors' performance and learn from their success",
+              icon: <BarChart2 className="h-10 w-10 text-purple-400" />
             },
             {
               title: "Video Cloning",
-              description: "Analyze top-performing videos and create similar content for your channel"
+              description: "Analyze top-performing videos and create similar content for your channel",
+              icon: <CheckCircle className="h-10 w-10 text-blue-400" />
             },
             {
               title: "AI Script Generation",
-              description: "Generate engaging scripts tailored to your audience and channel style"
+              description: "Generate engaging scripts tailored to your audience and channel style",
+              icon: <Play className="h-10 w-10 text-green-400" />
             }
           ].map((feature, index) => (
             <div 
               key={index} 
-              className="bg-white/5 rounded-xl p-6 backdrop-blur-sm border border-white/10 hover:border-white/20 transition-all hover:transform hover:translate-y-[-5px]"
+              className="bg-white/5 rounded-xl p-8 backdrop-blur-sm border border-white/10 hover:border-white/20 transition-all hover:transform hover:translate-y-[-5px]"
             >
-              <h3 className="text-xl font-semibold mb-3">{feature.title}</h3>
+              <div className="bg-white/10 rounded-full w-16 h-16 flex items-center justify-center mb-4">
+                {feature.icon}
+              </div>
+              <h3 className="text-2xl font-semibold mb-3">{feature.title}</h3>
               <p className="text-white/70">{feature.description}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Stats Section */}
+      <section className="container mx-auto px-4 py-16">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+          {[
+            { value: "10M+", label: "Scripts Generated" },
+            { value: "5K+", label: "Creators" },
+            { value: "90%", label: "Time Saved" },
+            { value: "24/7", label: "AI Support" }
+          ].map((stat, index) => (
+            <div key={index} className="p-6">
+              <div className="text-3xl md:text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400">
+                {stat.value}
+              </div>
+              <div className="text-white/60 mt-2">{stat.label}</div>
             </div>
           ))}
         </div>
@@ -118,10 +151,10 @@ const Landing: React.FC = () => {
             Join thousands of creators using ScriptX to analyze competitors and create better content
           </p>
           <Button 
-            onClick={handleGetStarted}
+            onClick={handleAction}
             className="bg-gradient-to-r from-purple-600 to-blue-500 hover:from-purple-700 hover:to-blue-600 text-lg px-8 py-6 h-auto rounded-full"
           >
-            Get Started Now <ArrowRight className="ml-2 h-5 w-5" />
+            {isAuthenticated ? "Go to Dashboard" : "Get Started Now"} <ArrowRight className="ml-2 h-5 w-5" />
           </Button>
         </div>
       </section>
