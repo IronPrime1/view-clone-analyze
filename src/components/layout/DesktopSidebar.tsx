@@ -55,7 +55,7 @@ const DesktopSidebar: React.FC = () => {
             </li>
             <li>
               <NavLink 
-                to="/competitors" 
+                to="/dashboard/competitors" 
                 className={({ isActive }) => 
                   `flex items-center gap-3 p-3 rounded-md transition-colors ${
                     isActive 
@@ -70,7 +70,7 @@ const DesktopSidebar: React.FC = () => {
             </li>
             <li>
               <NavLink 
-                to="/clone" 
+                to="/dashboard/clone" 
                 className={({ isActive }) => 
                   `flex items-center gap-3 p-3 rounded-md transition-colors ${
                     isActive 
@@ -85,7 +85,7 @@ const DesktopSidebar: React.FC = () => {
             </li>
             <li>
               <NavLink 
-                to="/scripts" 
+                to="/dashboard/scripts" 
                 className={({ isActive }) => 
                   `flex items-center gap-3 p-3 rounded-md transition-colors ${
                     isActive 
