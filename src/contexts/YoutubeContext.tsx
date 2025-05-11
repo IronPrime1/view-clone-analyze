@@ -399,53 +399,6 @@ export const YoutubeProvider: React.FC<{children: React.ReactNode}> = ({ childre
       console.error("Error loading views data:", error);
     }
   };
-
-  // Trigger the daily views tracker edge function
-  const triggerDailyViewsUpdate = async () => {
-    try {
-      setIsLoading(true);
-      
-      // First try to get real YouTube Analytics data
-      if (ownChannel) {
-        try {
-          const { data: analyticsData, error: analyticsError } = await fetchYouTubeAnalytics();
-          
-          if (!analyticsError && Array.isArray(analyticsData) && analyticsData.length > 0) {
-            // We have real YouTube Analytics data
-            setViewsData(prev => ({
-              ...prev,
-              [ownChannel.id]: analyticsData
-            }));
-            
-            toast.success("Updated with real YouTube Analytics data");
-            setIsLoading(false);
-            return;
-          }
-        } catch (error) {
-          console.error("Error fetching YouTube Analytics:", error);
-        }
-      }
-      
-      // Fallback to the edge function for mock data
-      const { error } = await supabase.functions.invoke('daily-views-tracker', {});
-      
-      if (error) throw error;
-      
-      toast.success("Daily views update initiated");
-      
-      // Refresh views data after a delay to allow the edge function to complete
-      setTimeout(() => {
-        loadViewsData();
-        setIsLoading(false);
-      }, 3000);
-      
-      return;
-    } catch (error) {
-      console.error("Error triggering daily views update:", error);
-      toast.error("Failed to update daily views");
-      setIsLoading(false);
-    }
-  };
   
   // Log in with YouTube OAuth
   const login = async () => {
