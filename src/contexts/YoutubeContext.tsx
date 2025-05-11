@@ -1,3 +1,4 @@
+
 import React, { createContext, useState, useContext, useEffect, useRef } from 'react';
 import { supabase, fetchYouTubeAnalytics } from '../integrations/supabase/client';
 import { toast } from 'sonner';
@@ -57,8 +58,10 @@ interface YoutubeContextType {
   triggerDailyViewsUpdate: () => Promise<void>;
 }
 
+// Create the context
 const YoutubeContext = createContext<YoutubeContextType | undefined>(undefined);
 
+// Custom hook to use the context
 export const useYoutube = () => {
   const context = useContext(YoutubeContext);
   if (context === undefined) {
@@ -67,9 +70,10 @@ export const useYoutube = () => {
   return context;
 };
 
+// Provider component
 export const YoutubeProvider: React.FC<{children: React.ReactNode}> = ({ children }) => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [ownChannel, setOwnChannel] = useState<Channel | null>(null);
   const [competitors, setCompetitors] = useState<Channel[]>([]);
   const [viewsData, setViewsData] = useState<ViewsData>({});
