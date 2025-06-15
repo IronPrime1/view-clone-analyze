@@ -5,54 +5,62 @@ import { LayoutDashboard, Users, Clipboard as ClipboardIcon, Code } from 'lucide
 
 const MobileNavigation: React.FC = () => {
   return (
-    <nav className="mobile-nav fixed bottom-0 left-0 right-0 bg-background border-t flex justify-around items-center px-2 md:hidden z-10">
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-md border-t border-border/50 flex justify-around items-center px-2 py-3 z-10 shadow-lg">
       <NavLink 
         to="/dashboard" 
         className={({ isActive }) => 
-          `flex flex-col items-center py-2 px-2 ${
-            isActive ? 'text-primary' : 'text-muted-foreground'
+          `flex flex-col items-center py-2 px-3 rounded-lg transition-all duration-300 ${
+            isActive 
+              ? 'text-primary bg-primary/10 neon-glow' 
+              : 'text-muted-foreground hover:text-foreground hover:bg-accent/50'
           }`
         }
         end
       >
-        <LayoutDashboard className="h-5 w-5" />
-        <span className="text-xs mt-1">Dashboard</span>
+        <LayoutDashboard className="h-5 w-5 mb-1" />
+        <span className="text-xs font-medium">Dashboard</span>
       </NavLink>
       
       <NavLink 
         to="/dashboard/competitors" 
         className={({ isActive }) => 
-          `flex flex-col items-center py-2 px-2 ${
-            isActive ? 'text-primary' : 'text-muted-foreground'
+          `flex flex-col items-center py-2 px-3 rounded-lg transition-all duration-300 ${
+            isActive 
+              ? 'text-primary bg-primary/10 neon-glow' 
+              : 'text-muted-foreground hover:text-foreground hover:bg-accent/50'
           }`
         }
       >
-        <Users className="h-5 w-5" />
-        <span className="text-xs mt-1">Competitors</span>
+        <Users className="h-5 w-5 mb-1" />
+        <span className="text-xs font-medium">Competitors</span>
       </NavLink>
       
       <NavLink 
         to="/dashboard/clone" 
         className={({ isActive }) => 
-          `flex flex-col items-center py-2 px-2 ${
-            isActive ? 'text-primary' : 'text-muted-foreground'
+          `flex flex-col items-center py-2 px-3 rounded-lg transition-all duration-300 ${
+            isActive 
+              ? 'text-primary bg-primary/10 neon-glow' 
+              : 'text-muted-foreground hover:text-foreground hover:bg-accent/50'
           }`
         }
       >
-        <ClipboardIcon className="h-5 w-5" />
-        <span className="text-xs mt-1">Clone</span>
+        <ClipboardIcon className="h-5 w-5 mb-1" />
+        <span className="text-xs font-medium">Clone</span>
       </NavLink>
       
       <NavLink 
         to="/dashboard/scripts" 
         className={({ isActive }) => 
-          `flex flex-col items-center py-2 px-2 ${
-            isActive ? 'text-primary' : 'text-muted-foreground'
+          `flex flex-col items-center py-2 px-3 rounded-lg transition-all duration-300 ${
+            isActive 
+              ? 'text-primary bg-primary/10 neon-glow' 
+              : 'text-muted-foreground hover:text-foreground hover:bg-accent/50'
           }`
         }
       >
-        <Code className="h-5 w-5" />
-        <span className="text-xs mt-1">Scripts</span>
+        <Code className="h-5 w-5 mb-1" />
+        <span className="text-xs font-medium">Scripts</span>
       </NavLink>
     </nav>
   );
