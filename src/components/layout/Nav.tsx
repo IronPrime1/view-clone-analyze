@@ -3,6 +3,7 @@ import React from 'react'
 import { Button } from '@/components/ui/button';
 import { useYoutube } from '../../contexts/YoutubeContext';
 import { useNavigate } from 'react-router-dom';
+import ThemeToggle from '../ui/theme-toggle';
 
 function Nav() {
   const { isAuthenticated } = useYoutube();
@@ -20,6 +21,8 @@ function Nav() {
           <img src="/Logo1.png" alt="ScriptX Logo" className="h-10 w-10" />
           <h1 className="text-2xl font-bold">ScriptX</h1>
         </div>
+        <div className="flex items-center gap-3">
+          <ThemeToggle />
           <Button 
               onClick={handleAction} 
               variant="default" 
@@ -27,6 +30,7 @@ function Nav() {
             >
               {isAuthenticated ? "Dashboard" : "Sign In"}
           </Button>
+        </div>
       </header>
   )
 }

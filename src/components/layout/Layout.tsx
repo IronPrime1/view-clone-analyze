@@ -9,6 +9,7 @@ import AuthRequired from '../auth/AuthRequired';
 import { Menu } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import ThemeToggle from '../ui/theme-toggle';
 
 const Layout: React.FC = () => {
   const { isLoading, ownChannel } = useYoutube();
@@ -51,102 +52,105 @@ const Layout: React.FC = () => {
             <span className="text-xl font-semibold font-inter">ScriptX</span>
           </div>
         
-        <Sheet open={open} onOpenChange={setOpen}>
-          <SheetTrigger asChild>
-            <Button variant="ghost" size="icon">
-              <Menu className="h-6 w-6" />
-              <span className="sr-only">Open menu</span>
-            </Button>
-          </SheetTrigger>
-          <SheetContent side="left" className="p-0">
-            <div className="flex flex-col h-full bg-sidebar text-sidebar-foreground">
-              <div className="p-4 border-b border-sidebar-border">
-                <div className="flex items-center space-x-2">
-                  <div className="h-8 w-8 rounded-md flex items-center justify-center">
-                    <img src="/Logo1.png" alt="Logo" className="h-8 w-8 rounded-md" />
-                  </div>
-                    <span className="text-xl font-semibold font-inter">ScriptX</span>
-                  </div>  
-              </div>
-              
-              <nav 
-                className="flex-1 px-4 py-2"
-                onClick={() => setOpen(false)}
-              >
-                {ownChannel && (
-                  <div className="mt-0 pt-0 pb-2">
-                    <div className="flex items-center gap-2">
-                      <img 
-                        src={ownChannel.thumbnail} 
-                        alt={ownChannel.title} 
-                        className="w-8 h-8 rounded-full"
-                      />
-                      <div className="truncate">
-                        <p className="font-medium truncate">{ownChannel.title}</p>
-                        <p className="text-xs opacity-70">{ownChannel.subscriberCount.toLocaleString()} subscribers</p>
+        <div className="flex items-center gap-2">
+          <ThemeToggle />
+          <Sheet open={open} onOpenChange={setOpen}>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon">
+                <Menu className="h-6 w-6" />
+                <span className="sr-only">Open menu</span>
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="left" className="p-0">
+              <div className="flex flex-col h-full bg-sidebar text-sidebar-foreground">
+                <div className="p-4 border-b border-sidebar-border">
+                  <div className="flex items-center space-x-2">
+                    <div className="h-8 w-8 rounded-md flex items-center justify-center">
+                      <img src="/Logo1.png" alt="Logo" className="h-8 w-8 rounded-md" />
+                    </div>
+                      <span className="text-xl font-semibold font-inter">ScriptX</span>
+                    </div>  
+                </div>
+                
+                <nav 
+                  className="flex-1 px-4 py-2"
+                  onClick={() => setOpen(false)}
+                >
+                  {ownChannel && (
+                    <div className="mt-0 pt-0 pb-2">
+                      <div className="flex items-center gap-2">
+                        <img 
+                          src={ownChannel.thumbnail} 
+                          alt={ownChannel.title} 
+                          className="w-8 h-8 rounded-full"
+                        />
+                        <div className="truncate">
+                          <p className="font-medium truncate">{ownChannel.title}</p>
+                          <p className="text-xs opacity-70">{ownChannel.subscriberCount.toLocaleString()} subscribers</p>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                )}
-                <ul className="space-y-2">
-                  {/* Updated navigation links */}
-                  <li>
-                    <Button 
-                      asChild 
-                      variant="ghost" 
-                      className="w-full justify-start"
-                      onClick={() => setOpen(false)}
-                    >
-                      <a href="/dashboard">
-                        <span className="h-5 w-5 mr-3">📊</span>
-                        Dashboard
-                      </a>
-                    </Button>
-                  </li>
-                  <li>
-                    <Button 
-                      asChild 
-                      variant="ghost" 
-                      className="w-full justify-start"
-                      onClick={() => setOpen(false)}
-                    >
-                      <a href="/dashboard/competitors">
-                        <span className="h-5 w-5 mr-3">👥</span>
-                        Competitors
-                      </a>
-                    </Button>
-                  </li>
-                  <li>
-                    <Button 
-                      asChild 
-                      variant="ghost" 
-                      className="w-full justify-start"
-                      onClick={() => setOpen(false)}
-                    >
-                      <a href="/dashboard/clone">
-                        <span className="h-5 w-5 mr-3">📝</span>
-                        Clone
-                      </a>
-                    </Button>
-                  </li>
-                  <li>
-                    <Button 
-                      asChild 
-                      variant="ghost" 
-                      className="w-full justify-start"
-                      onClick={() => setOpen(false)}
-                    >
-                      <a href="/dashboard/scripts">
-                        <span className="h-5 w-5 mr-3">📜</span>
-                        Scripts
-                      </a>
-                    </Button>
-                  </li>
-                </ul>
-              </nav>
-            </div>
-          </SheetContent>
-        </Sheet>
+                  )}
+                  <ul className="space-y-2">
+                    {/* Updated navigation links */}
+                    <li>
+                      <Button 
+                        asChild 
+                        variant="ghost" 
+                        className="w-full justify-start"
+                        onClick={() => setOpen(false)}
+                      >
+                        <a href="/dashboard">
+                          <span className="h-5 w-5 mr-3">📊</span>
+                          Dashboard
+                        </a>
+                      </Button>
+                    </li>
+                    <li>
+                      <Button 
+                        asChild 
+                        variant="ghost" 
+                        className="w-full justify-start"
+                        onClick={() => setOpen(false)}
+                      >
+                        <a href="/dashboard/competitors">
+                          <span className="h-5 w-5 mr-3">👥</span>
+                          Competitors
+                        </a>
+                      </Button>
+                    </li>
+                    <li>
+                      <Button 
+                        asChild 
+                        variant="ghost" 
+                        className="w-full justify-start"
+                        onClick={() => setOpen(false)}
+                      >
+                        <a href="/dashboard/clone">
+                          <span className="h-5 w-5 mr-3">📝</span>
+                          Clone
+                        </a>
+                      </Button>
+                    </li>
+                    <li>
+                      <Button 
+                        asChild 
+                        variant="ghost" 
+                        className="w-full justify-start"
+                        onClick={() => setOpen(false)}
+                      >
+                        <a href="/dashboard/scripts">
+                          <span className="h-5 w-5 mr-3">📜</span>
+                          Scripts
+                        </a>
+                      </Button>
+                    </li>
+                  </ul>
+                </nav>
+              </div>
+            </SheetContent>
+          </Sheet>
+        </div>
       </header>
       
       <DesktopSidebar />

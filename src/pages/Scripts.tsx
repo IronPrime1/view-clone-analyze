@@ -1,13 +1,13 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { ExternalLink, Trash2, Clipboard, Download, Edit3, Check, X } from 'lucide-react';
+import { ExternalLink, Trash2, Clipboard, Download, Edit3, Check, X, FileText, Calendar, User } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '../integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { Textarea } from '@/components/ui/textarea';
+import { useTheme } from '../contexts/ThemeContext';
 
 interface Script {
   id: string;
@@ -25,6 +25,7 @@ const Scripts: React.FC = () => {
   const [editContent, setEditContent] = useState<string>('');
   const [saveTimeout, setSaveTimeout] = useState<NodeJS.Timeout | null>(null);
   const navigate = useNavigate();
+  const { theme } = useTheme();
   
   useEffect(() => {
     fetchScripts();
@@ -229,45 +230,62 @@ const Scripts: React.FC = () => {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-[calc(100vh-200px)]">
-        <div className="h-8 w-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+        <div className="flex flex-col items-center gap-4">
+          <div className={`h-8 w-8 border-4 border-primary border-t-transparent rounded-full animate-spin ${theme === 'neon' ? 'animate-neon-pulse' : ''}`}></div>
+          <p className="text-muted-foreground">Loading your scripts...</p>
+        </div>
       </div>
     );
   }
   
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-800 p-4">
-      <div className="max-w-7xl mx-auto space-y-8">
+    <div className="min-h-screen p-4 lg:p-6">
+      <div className="max-w-7xl mx-auto space-y-6">
         {/* Header Section */}
         <div className="text-center space-y-4">
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-            Your Script Library
-          </h1>
-          <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+          <div className="flex items-center justify-center gap-3 mb-4">
+            <FileText className={`h-8 w-8 text-primary ${theme === 'neon' ? 'neon-glow' : ''}`} />
+            <h1 className={`text-3xl lg:text-4xl font-bold ${theme === 'neon' ? 'neon-text' : ''}`}>
+              Script Library
+            </h1>
+          </div>
+          <p className="text-muted-foreground text-base lg:text-lg max-w-2xl mx-auto">
             Manage and edit your saved scripts. All changes are automatically saved as you type.
           </p>
         </div>
 
         {scripts.length > 0 ? (
-          <div className="grid gap-6">
+          <div className="grid gap-4 lg:gap-6">
             {scripts.map(script => (
-              <Card key={script.id} className="overflow-hidden border-0 shadow-lg bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm hover:shadow-xl transition-all duration-300">
-                <CardHeader className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 border-b border-blue-100 dark:border-slate-700">
-                  <div className="flex items-start justify-between">
-                    <div className="space-y-2">
-                      <CardTitle className="text-xl font-semibold text-slate-800 dark:text-slate-100">
+              <Card 
+                key={script.id} 
+                className={`overflow-hidden transition-all duration-300 hover-lift card-hover ${
+                  theme === 'neon' ? 'neon-border bg-card/90' : 'border-0 shadow-lg bg-card/80 backdrop-blur-sm hover:shadow-xl'
+                }`}
+              >
+                <CardHeader className={`${theme === 'neon' ? 'border-b neon-border' : 'bg-gradient-to-r from-primary/10 to-secondary/10 border-b'}`}>
+                  <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
+                    <div className="space-y-3">
+                      <CardTitle className="text-lg lg:text-xl font-semibold line-clamp-2">
                         {script.video_title}
                       </CardTitle>
-                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                        <span className="bg-blue-100 dark:bg-blue-900/30 px-2 py-1 rounded-full">
-                          {script.channel_title}
-                        </span>
-                        <span>
-                          Saved: {new Date(script.created_at).toLocaleDateString()}
-                        </span>
+                      <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
+                        <div className="flex items-center gap-1">
+                          <User className="h-4 w-4" />
+                          <span className={`px-2 py-1 rounded-full ${theme === 'neon' ? 'bg-primary/20 neon-border' : 'bg-primary/10'}`}>
+                            {script.channel_title}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Calendar className="h-4 w-4" />
+                          <span>
+                            {new Date(script.created_at).toLocaleDateString()}
+                          </span>
+                        </div>
                       </div>
                     </div>
                     
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       {editingScript === script.id ? (
                         <>
                           <Button 
@@ -277,6 +295,7 @@ const Scripts: React.FC = () => {
                             className="text-green-600 hover:text-green-700 hover:bg-green-50 dark:hover:bg-green-900/20"
                           >
                             <Check className="h-4 w-4" />
+                            <span className="hidden sm:inline ml-1">Save</span>
                           </Button>
                           <Button 
                             variant="ghost" 
@@ -285,6 +304,7 @@ const Scripts: React.FC = () => {
                             className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
                           >
                             <X className="h-4 w-4" />
+                            <span className="hidden sm:inline ml-1">Cancel</span>
                           </Button>
                         </>
                       ) : (
@@ -296,6 +316,7 @@ const Scripts: React.FC = () => {
                             className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/20"
                           >
                             <Edit3 className="h-4 w-4" />
+                            <span className="hidden sm:inline ml-1">Edit</span>
                           </Button>
                           <Button 
                             variant="ghost" 
@@ -304,6 +325,7 @@ const Scripts: React.FC = () => {
                             className="text-slate-600 hover:text-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800"
                           >
                             <ExternalLink className="h-4 w-4" />
+                            <span className="hidden sm:inline ml-1">View</span>
                           </Button>
                           <Button 
                             variant="ghost" 
@@ -312,6 +334,7 @@ const Scripts: React.FC = () => {
                             onClick={() => handleDeleteScript(script.id)}
                           >
                             <Trash2 className="h-4 w-4" />
+                            <span className="hidden sm:inline ml-1">Delete</span>
                           </Button>
                         </>
                       )}
@@ -322,21 +345,24 @@ const Scripts: React.FC = () => {
                 <CardContent className="p-0">
                   <div className="max-h-96 overflow-hidden">
                     {editingScript === script.id ? (
-                      <div className="p-6">
+                      <div className="p-4 lg:p-6">
                         <Textarea
                           value={editContent}
                           onChange={(e) => setEditContent(e.target.value)}
-                          className="min-h-[300px] border-0 focus:ring-2 focus:ring-blue-500/20 bg-transparent resize-none font-mono text-sm leading-relaxed"
+                          className={`min-h-[300px] border-0 focus:ring-2 focus:ring-primary/20 bg-transparent resize-none font-mono text-sm leading-relaxed ${
+                            theme === 'neon' ? 'neon-border focus:neon-glow' : ''
+                          }`}
                           placeholder="Edit your script..."
                         />
-                        <div className="mt-2 text-xs text-muted-foreground">
+                        <div className="mt-2 text-xs text-muted-foreground flex items-center gap-2">
+                          <div className={`w-2 h-2 rounded-full bg-green-500 ${theme === 'neon' ? 'animate-neon-pulse' : 'animate-pulse'}`}></div>
                           Changes are automatically saved as you type
                         </div>
                       </div>
                     ) : (
                       <ScrollArea className="h-96">
-                        <div className="p-6">
-                          <pre className="whitespace-pre-wrap text-sm leading-relaxed text-slate-700 dark:text-slate-300 font-mono">
+                        <div className="p-4 lg:p-6">
+                          <pre className="whitespace-pre-wrap text-sm leading-relaxed text-foreground font-mono">
                             {script.content}
                           </pre>
                         </div>
@@ -346,22 +372,22 @@ const Scripts: React.FC = () => {
                 </CardContent>
                 
                 {editingScript !== script.id && (
-                  <div className="border-t border-slate-100 dark:border-slate-700 p-4 bg-slate-50/50 dark:bg-slate-800/50">
-                    <div className="flex gap-3">
+                  <div className={`border-t p-4 ${theme === 'neon' ? 'neon-border bg-card/50' : 'border-border bg-muted/30'}`}>
+                    <div className="flex flex-col sm:flex-row gap-3">
                       <Button 
                         variant="outline" 
                         size="sm"
                         onClick={() => handleCopyScript(script.content)}
-                        className="flex-1 hover:bg-blue-50 hover:border-blue-200 dark:hover:bg-blue-900/20"
+                        className={`flex-1 ${theme === 'neon' ? 'neon-border hover:neon-glow' : 'hover:bg-blue-50 hover:border-blue-200 dark:hover:bg-blue-900/20'}`}
                       >
                         <Clipboard className="mr-2 h-4 w-4" />
-                        Copy
+                        Copy Script
                       </Button>
                       <Button 
                         variant="outline" 
                         size="sm"
                         onClick={() => handleDownloadScript(script.content, script.video_id)}
-                        className="flex-1 hover:bg-green-50 hover:border-green-200 dark:hover:bg-green-900/20"
+                        className={`flex-1 ${theme === 'neon' ? 'neon-border hover:neon-glow' : 'hover:bg-green-50 hover:border-green-200 dark:hover:bg-green-900/20'}`}
                       >
                         <Download className="mr-2 h-4 w-4" />
                         Download
@@ -373,20 +399,23 @@ const Scripts: React.FC = () => {
             ))}
           </div>
         ) : (
-          <Card className="border-0 shadow-lg bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm">
+          <Card className={`transition-all duration-300 ${theme === 'neon' ? 'neon-border bg-card/90' : 'border-0 shadow-lg bg-card/80 backdrop-blur-sm'}`}>
             <CardContent className="py-16 text-center">
-              <div className="max-w-md mx-auto space-y-4">
-                <div className="w-16 h-16 mx-auto bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
-                  <Edit3 className="h-8 w-8 text-white" />
+              <div className="max-w-md mx-auto space-y-6">
+                <div className={`w-16 h-16 mx-auto rounded-full flex items-center justify-center ${theme === 'neon' ? 'bg-primary/20 neon-border animate-neon-pulse' : 'bg-gradient-to-br from-primary to-secondary'}`}>
+                  <FileText className="h-8 w-8 text-primary-foreground" />
                 </div>
-                <h3 className="text-xl font-semibold">No scripts yet</h3>
-                <p className="text-muted-foreground">
-                  Start by creating your first script from competitor videos
-                </p>
+                <div className="space-y-2">
+                  <h3 className="text-xl font-semibold">No scripts saved yet</h3>
+                  <p className="text-muted-foreground">
+                    Create your first script from competitor videos to get started
+                  </p>
+                </div>
                 <Button 
                   onClick={() => navigate('/dashboard/clone')}
-                  className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                  className={`transition-all duration-300 ${theme === 'neon' ? 'neon-border hover:neon-glow' : 'bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90'}`}
                 >
+                  <Edit3 className="mr-2 h-4 w-4" />
                   Create First Script
                 </Button>
               </div>
