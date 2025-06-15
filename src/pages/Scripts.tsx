@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -20,6 +19,7 @@ interface Script {
 }
 
 const Scripts: React.FC = () => {
+  
   const [scripts, setScripts] = useState<Script[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [editingScript, setEditingScript] = useState<string | null>(null);
