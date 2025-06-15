@@ -181,7 +181,7 @@ const Competitors: React.FC = () => {
                               <h3 className="font-medium line-clamp-2">{video.title}</h3>
                               <ExternalLink className="h-4 w-4 flex-shrink-0 ml-2 text-muted-foreground" />
                             </div>
-                            <div className="flex flex-wrap items-center gap-3 mt-2 text-sm text-muted-foreground">
+                            <div className="flex flex-wrap items-center gap-3 mt-2 text-xs text-muted-foreground">
                               <span className="flex items-center gap-1">
                                 <Eye className="h-3 w-3" />
                                 {video.viewCount.toLocaleString()}

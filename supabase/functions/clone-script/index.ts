@@ -1,98 +1,108 @@
-
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 serve(async (req) => {
   const corsHeaders = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type'
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Headers":
+      "authorization, x-client-info, apikey, content-type",
   };
 
   // Handle preflight OPTIONS request
-  if (req.method === 'OPTIONS') {
+  if (req.method === "OPTIONS") {
     return new Response(null, {
-      headers: corsHeaders
+      headers: corsHeaders,
     });
   }
 
   try {
     // Parse request body
     const { videoUrl, userUrl } = await req.json();
-    
-    if (!videoUrl || typeof videoUrl !== 'string') {
-      throw new Error('videoUrl is missing or invalid');
+
+    if (!videoUrl || typeof videoUrl !== "string") {
+      throw new Error("videoUrl is missing or invalid");
     }
 
     // Extract video ID from the YouTube URL
     const videoId = videoUrl.match(/(?:[?&]v=|youtu.be\/)([a-zA-Z0-9_-]{11})/);
     if (!videoId) {
-      throw new Error('Invalid YouTube URL');
+      throw new Error("Invalid YouTube URL");
     }
 
     // Get API keys
-    const rapidApiKey = Deno.env.get('RAPID_API_KEY');
-    const groqApiKey = Deno.env.get('GROQ_API_KEY');
-    
+    const rapidApiKey = Deno.env.get("RAPID_API_KEY");
+    const groqApiKey = Deno.env.get("GROQ_API_KEY");
+
     if (!groqApiKey) {
-      throw new Error('GROQ_API_KEY is not set in environment variables');
+      throw new Error("GROQ_API_KEY is not set in environment variables");
     }
 
     // Fetch the transcript using RapidAPI
     console.log(`Fetching transcript for video ID: ${videoId[1]}`);
     const transcriptUrl = `https://youtube-transcript3.p.rapidapi.com/api/transcript?videoId=${videoId[1]}`;
     const options = {
-      method: 'GET',
+      method: "GET",
       headers: {
-        'x-rapidapi-key': rapidApiKey,
-        'x-rapidapi-host': 'youtube-transcript3.p.rapidapi.com'
-      }
+        "x-rapidapi-key": rapidApiKey,
+        "x-rapidapi-host": "youtube-transcript3.p.rapidapi.com",
+      },
     };
 
     const transcriptResponse = await fetch(transcriptUrl, options);
     if (!transcriptResponse.ok) {
       const errorText = await transcriptResponse.text();
-      console.error(`RapidAPI error (${transcriptResponse.status}):`, errorText);
-      throw new Error(`Error fetching transcript: ${transcriptResponse.status} ${transcriptResponse.statusText}`);
+      console.error(
+        `RapidAPI error (${transcriptResponse.status}):`,
+        errorText
+      );
+      throw new Error(
+        `Error fetching transcript: ${transcriptResponse.status} ${transcriptResponse.statusText}`
+      );
     }
 
     const transcriptData = await transcriptResponse.json();
     if (!transcriptData || !transcriptData.transcript) {
-      throw new Error('No transcript data available for this video');
+      throw new Error("No transcript data available for this video");
     }
 
     const transcript = transcriptData.transcript;
-    const plainTextTranscript = transcript.map((item) => item.text).join(' ');
+    const plainTextTranscript = transcript.map((item) => item.text).join(" ");
 
     // Helper function to call Groq API
-    const callGroqAPI = async (prompt, model = 'llama-3.3-70b-versatile') => {
-      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${groqApiKey}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          model,
-          messages: [{ role: 'user', content: prompt }],
-          temperature: 0.8,
-          max_tokens: 4000
-        })
-      });
+    const callGroqAPI = async (prompt, model = "llama-3.3-70b-versatile") => {
+      const response = await fetch(
+        "https://api.groq.com/openai/v1/chat/completions",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${groqApiKey}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model,
+            messages: [{ role: "user", content: prompt }],
+            temperature: 0.8,
+            max_tokens: 4000,
+          }),
+        }
+      );
 
       if (!response.ok) {
         const errorText = await response.text();
         console.error(`Groq API error (${response.status}):`, errorText);
-        throw new Error(`Groq API error: ${response.status} ${response.statusText}`);
+        throw new Error(
+          `Groq API error: ${response.status} ${response.statusText}`
+        );
       }
 
       const completion = await response.json();
-      return completion.choices?.[0]?.message?.content || '';
+      return completion.choices?.[0]?.message?.content || "";
     };
 
-    let userStyleAnalysis = '';
-    
+    let userStyleAnalysis = "";
+
     // Step 1: Analyze user's style if userUrl is provided
     if (userUrl) {
-      console.log('Step 1: Analyzing user style...');
+      console.log("Step 1: Analyzing user style...");
       const styleAnalysisPrompt = `
 You are a master YouTube script analyst with expertise in identifying unique storytelling patterns, voice, and engagement techniques.
 
@@ -117,11 +127,11 @@ Provide a detailed style profile that could be used to recreate their voice auth
 `;
 
       userStyleAnalysis = await callGroqAPI(styleAnalysisPrompt);
-      console.log('User style analysis completed');
+      console.log("User style analysis completed");
     }
 
     // Step 2: Analyze the viral video structure and key elements
-    console.log('Step 2: Analyzing viral video structure...');
+    console.log("Step 2: Analyzing viral video structure...");
     const viralAnalysisPrompt = `
 You are a viral content strategist who reverse-engineers what makes videos explode on YouTube.
 
@@ -147,17 +157,19 @@ Focus on WHY it works, not just WHAT it says.
 `;
 
     const viralAnalysis = await callGroqAPI(viralAnalysisPrompt);
-    console.log('Viral analysis completed');
+    console.log("Viral analysis completed");
 
     // Step 3: Generate the ultimate script
-    console.log('Step 3: Generating the ultimate script...');
+    console.log("Step 3: Generating the ultimate script...");
     const finalScriptPrompt = `
 You are the world's most elite YouTube scriptwriter, combining the storytelling mastery of Pixar, the engagement tactics of MrBeast, and the psychological understanding of viral content creators.
 
 Your mission: Create a LEGENDARY YouTube script that will become the new gold standard.
 
 **USER'S SIGNATURE STYLE:**
-${userStyleAnalysis || 'No user style provided - create in a universally engaging style'}
+${userStyleAnalysis ||
+      "No user style provided - create in a universally engaging style"
+      }
 
 **VIRAL VIDEO ANALYSIS:**
 ${viralAnalysis}
@@ -208,31 +220,36 @@ Make every word count. Every sentence should either advance the story or deepen 
 Create something that people will want to share because it made them feel smarter, more inspired, or more connected.
 `;
 
-    console.log('Calling final script generation...');
+    console.log("Calling final script generation...");
     const finalScript = await callGroqAPI(finalScriptPrompt);
 
     // Return the generated script
-    return new Response(JSON.stringify({
-      script: finalScript,
-      userStyleAnalysis: userStyleAnalysis || null,
-      viralAnalysis: viralAnalysis
-    }), {
-      headers: {
-        ...corsHeaders,
-        'Content-Type': 'application/json'
+    return new Response(
+      JSON.stringify({
+        script: finalScript,
+        userStyleAnalysis: userStyleAnalysis || null,
+        viralAnalysis: viralAnalysis,
+      }),
+      {
+        headers: {
+          ...corsHeaders,
+          "Content-Type": "application/json",
+        },
       }
-    });
-
+    );
   } catch (error) {
-    console.error('Script generation error:', error);
-    return new Response(JSON.stringify({
-      error: error.message
-    }), {
-      status: 500,
-      headers: {
-        ...corsHeaders,
-        'Content-Type': 'application/json'
+    console.error("Script generation error:", error);
+    return new Response(
+      JSON.stringify({
+        error: error.message,
+      }),
+      {
+        status: 500,
+        headers: {
+          ...corsHeaders,
+          "Content-Type": "application/json",
+        },
       }
-    });
+    );
   }
 });

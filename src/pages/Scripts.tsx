@@ -1,13 +1,30 @@
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { ExternalLink, Trash2, Clipboard, Download, Edit3, Check, X, FileText, Calendar, User, ChevronDown } from 'lucide-react';
-import { toast } from 'sonner';
-import { supabase } from '../integrations/supabase/client';
-import { useNavigate } from 'react-router-dom';
-import { Textarea } from '@/components/ui/textarea';
+import React, { useState, useEffect } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import {
+  ExternalLink,
+  Trash2,
+  Clipboard,
+  Download,
+  Edit3,
+  Check,
+  X,
+  FileText,
+  Calendar,
+  User,
+  ChevronDown,
+} from "lucide-react";
+import { toast } from "sonner";
+import { supabase } from "../integrations/supabase/client";
+import { useNavigate } from "react-router-dom";
+import { Textarea } from "@/components/ui/textarea";
 
 interface Script {
   id: string;
@@ -19,62 +36,16 @@ interface Script {
 }
 
 const Scripts: React.FC = () => {
-  
   const [scripts, setScripts] = useState<Script[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [editingScript, setEditingScript] = useState<string | null>(null);
-  const [editContent, setEditContent] = useState<string>('');
+  const [editContent, setEditContent] = useState<string>("");
   const [saveTimeout, setSaveTimeout] = useState<NodeJS.Timeout | null>(null);
   const navigate = useNavigate();
-  
+
   useEffect(() => {
     fetchScripts();
   }, []);
-
-  // Auto-save functionality
-  useEffect(() => {
-    if (editingScript && editContent) {
-      if (saveTimeout) {
-        clearTimeout(saveTimeout);
-      }
-      
-      const timeout = setTimeout(() => {
-        handleAutoSave();
-      }, 2000);
-      
-      setSaveTimeout(timeout);
-    }
-    
-    return () => {
-      if (saveTimeout) {
-        clearTimeout(saveTimeout);
-      }
-    };
-  }, [editContent]);
-
-  const handleAutoSave = async () => {
-    if (!editingScript || !editContent) return;
-    
-    try {
-      const { error } = await supabase
-        .from('saved_scripts')
-        .update({ content: editContent })
-        .eq('id', editingScript);
-      
-      if (error) throw error;
-      
-      setScripts(scripts.map(script => 
-        script.id === editingScript 
-          ? { ...script, content: editContent }
-          : script
-      ));
-      
-      toast.success("Auto-saved", { duration: 1500 });
-    } catch (error: any) {
-      console.error("Auto-save error:", error);
-      toast.error("Failed to auto-save");
-    }
-  };
 
   const handleEditStart = (script: Script) => {
     setEditingScript(script.id);
@@ -83,7 +54,7 @@ const Scripts: React.FC = () => {
 
   const handleEditCancel = () => {
     setEditingScript(null);
-    setEditContent('');
+    setEditContent("");
     if (saveTimeout) {
       clearTimeout(saveTimeout);
     }
@@ -91,23 +62,25 @@ const Scripts: React.FC = () => {
 
   const handleEditSave = async () => {
     if (!editingScript || !editContent) return;
-    
+
     try {
       const { error } = await supabase
-        .from('saved_scripts')
+        .from("saved_scripts")
         .update({ content: editContent })
-        .eq('id', editingScript);
-      
+        .eq("id", editingScript);
+
       if (error) throw error;
-      
-      setScripts(scripts.map(script => 
-        script.id === editingScript 
-          ? { ...script, content: editContent }
-          : script
-      ));
-      
+
+      setScripts(
+        scripts.map((script) =>
+          script.id === editingScript
+            ? { ...script, content: editContent }
+            : script
+        )
+      );
+
       setEditingScript(null);
-      setEditContent('');
+      setEditContent("");
       toast.success("Script saved");
     } catch (error: any) {
       console.error("Save error:", error);
@@ -117,107 +90,114 @@ const Scripts: React.FC = () => {
 
   const handleCopyScript = (content: string) => {
     if (!content) return;
-    
-    navigator.clipboard.writeText(content)
+
+    navigator.clipboard
+      .writeText(content)
       .then(() => toast.success("Copied to clipboard"))
       .catch(() => toast.error("Failed to copy"));
   };
-  
+
   const handleDownloadScript = (content: string, videoId: string) => {
     if (!content) return;
-    
-    const blob = new Blob([content], { type: 'text/plain' });
+
+    const blob = new Blob([content], { type: "text/plain" });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
+    const a = document.createElement("a");
     a.href = url;
-    a.download = `script-${videoId}-${new Date().toISOString().split('T')[0]}.txt`;
+    a.download = `script-${videoId}-${
+      new Date().toISOString().split("T")[0]
+    }.txt`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-    
+
     toast.success("Script downloaded");
   };
-  
+
   const fetchScripts = async () => {
     setIsLoading(true);
-    
+
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
       if (!session) {
-        navigate('/auth');
+        navigate("/auth");
         return;
       }
-      
+
       const { data: scriptsData, error } = await supabase
-        .from('saved_scripts')
-        .select('*')
-        .eq('user_id', session.user.id)
-        .order('created_at', { ascending: false });
-      
+        .from("saved_scripts")
+        .select("*")
+        .eq("user_id", session.user.id)
+        .order("created_at", { ascending: false });
+
       if (error) {
         throw error;
       }
-      
-      const scriptsWithDetails = await Promise.all(scriptsData.map(async (script) => {
-        const { data: videoData } = await supabase
-          .from('competitor_videos')
-          .select('title, channel_id')
-          .eq('youtube_id', script.video_id)
-          .single();
-        
-        let channelTitle = '';
-        
-        if (videoData?.channel_id) {
-          const { data: channelData } = await supabase
-            .from('competitor_channels')
-            .select('title')
-            .eq('id', videoData.channel_id)
+
+      const scriptsWithDetails = await Promise.all(
+        scriptsData.map(async (script) => {
+          const { data: videoData } = await supabase
+            .from("competitor_videos")
+            .select("title, channel_id")
+            .eq("youtube_id", script.video_id)
             .single();
-          
-          if (channelData) {
-            channelTitle = channelData.title;
+
+          let channelTitle = "";
+
+          if (videoData?.channel_id) {
+            const { data: channelData } = await supabase
+              .from("competitor_channels")
+              .select("title")
+              .eq("id", videoData.channel_id)
+              .single();
+
+            if (channelData) {
+              channelTitle = channelData.title;
+            }
           }
-        }
-        
-        return {
-          ...script,
-          video_title: videoData?.title || 'Unknown Video',
-          channel_title: channelTitle || 'Unknown Channel'
-        };
-      }));
-      
+
+          return {
+            ...script,
+            video_title: videoData?.title || "Unknown Video",
+            channel_title: channelTitle || "Unknown Channel",
+          };
+        })
+      );
+
       setScripts(scriptsWithDetails);
     } catch (error) {
-      console.error('Error fetching scripts:', error);
-      toast.error('Failed to load scripts');
+      console.error("Error fetching scripts:", error);
+      toast.error("Failed to load scripts");
     } finally {
       setIsLoading(false);
     }
   };
-  
+
   const handleDeleteScript = async (id: string) => {
     try {
       const { error } = await supabase
-        .from('saved_scripts')
+        .from("saved_scripts")
         .delete()
-        .eq('id', id);
-      
+        .eq("id", id);
+
       if (error) throw error;
-      
-      setScripts(scripts.filter(script => script.id !== id));
-      toast.success('Script deleted');
+
+      setScripts(scripts.filter((script) => script.id !== id));
+      toast.success("Script deleted");
     } catch (error) {
-      console.error('Error deleting script:', error);
-      toast.error('Failed to delete script');
+      console.error("Error deleting script:", error);
+      toast.error("Failed to delete script");
     }
   };
-  
+
   const openYouTubeVideo = (videoId: string) => {
-    window.open(`https://youtube.com/watch?v=${videoId}`, '_blank');
+    window.open(`https://youtube.com/watch?v=${videoId}`, "_blank");
   };
-  
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-[calc(100vh-200px)]">
@@ -228,31 +208,21 @@ const Scripts: React.FC = () => {
       </div>
     );
   }
-  
-  return (
-    <div className="min-h-screen p-4 lg:p-6 bg-background">
-      <div className="max-w-4xl mx-auto space-y-6">
-        {/* Header */}
-        <div className="text-center space-y-2 mb-8">
-          <div className="flex items-center justify-center gap-3 mb-2">
-            <FileText className="h-6 w-6 text-primary" />
-            <h1 className="text-2xl lg:text-3xl font-bold">Script Library</h1>
-          </div>
-          <p className="text-muted-foreground">
-            Manage your saved scripts with auto-save editing
-          </p>
-        </div>
 
+  return (
+    <div className="space-y-5 px-2">
+      <h1 className="text-xl font-bold">Scripts</h1>
+      <div className="max-w-4xl mx-auto space-y-6">
         {scripts.length > 0 ? (
           <div className="space-y-4">
-            {scripts.map(script => (
+            {scripts.map((script) => (
               <Card key={script.id} className="border hover-lift">
                 <Accordion type="single" collapsible className="w-full">
                   <AccordionItem value={script.id} className="border-none">
                     <AccordionTrigger className="hover:no-underline p-6 pb-4">
                       <div className="flex flex-col items-start text-left space-y-2 w-full mr-4">
                         <h3 className="font-semibold text-base line-clamp-2">
-                          {script.video_title}
+                          {script.video_title.slice(0, 34)}..
                         </h3>
                         <div className="flex items-center gap-4 text-sm text-muted-foreground">
                           <div className="flex items-center gap-1">
@@ -261,80 +231,98 @@ const Scripts: React.FC = () => {
                           </div>
                           <div className="flex items-center gap-1">
                             <Calendar className="h-3 w-3" />
-                            <span>{new Date(script.created_at).toLocaleDateString()}</span>
+                            <span>
+                              {new Date(script.created_at).toLocaleDateString()}
+                            </span>
                           </div>
                         </div>
                       </div>
                     </AccordionTrigger>
-                    
+
                     <AccordionContent className="px-6 pb-6">
                       <div className="space-y-4">
                         {/* Action Buttons */}
-                        <div className="flex flex-wrap gap-2 mb-4">
+                        <div className="flex flex-col gap-2 mb-4 max-w-sm">
                           {editingScript === script.id ? (
                             <>
-                              <Button 
-                                size="sm"
-                                onClick={handleEditSave}
-                                className="text-green-600 hover:text-green-700"
-                                variant="outline"
-                              >
-                                <Check className="h-4 w-4 mr-1" />
-                                Save
-                              </Button>
-                              <Button 
-                                size="sm"
-                                onClick={handleEditCancel}
-                                variant="outline"
-                                className="text-gray-600 hover:text-gray-700"
-                              >
-                                <X className="h-4 w-4 mr-1" />
-                                Cancel
-                              </Button>
+                              <div className="flex gap-2 flex-row">
+                                <Button
+                                  size="sm"
+                                  onClick={handleEditSave}
+                                  className="text-green-600 hover:text-green-700 w-full"
+                                  variant="outline"
+                                >
+                                  <Check className="h-4 w-4 mr-1" />
+                                  Save
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  onClick={handleEditCancel}
+                                  variant="outline"
+                                  className="text-gray-600 hover:text-gray-700 w-full"
+                                >
+                                  <X className="h-4 w-4 mr-1" />
+                                  Cancel
+                                </Button>
+                              </div>
                             </>
                           ) : (
                             <>
-                              <Button 
-                                size="sm"
-                                onClick={() => handleEditStart(script)}
-                                variant="outline"
-                              >
-                                <Edit3 className="h-4 w-4 mr-1" />
-                                Edit
-                              </Button>
-                              <Button 
-                                size="sm" 
-                                onClick={() => handleCopyScript(script.content)}
-                                variant="outline"
-                              >
-                                <Clipboard className="h-4 w-4 mr-1" />
-                                Copy
-                              </Button>
-                              <Button 
-                                size="sm"
-                                onClick={() => handleDownloadScript(script.content, script.video_id)}
-                                variant="outline"
-                              >
-                                <Download className="h-4 w-4 mr-1" />
-                                Download
-                              </Button>
-                              <Button 
-                                size="sm" 
-                                onClick={() => openYouTubeVideo(script.video_id)}
-                                variant="outline"
-                              >
-                                <ExternalLink className="h-4 w-4 mr-1" />
-                                View Video
-                              </Button>
-                              <Button 
-                                size="sm" 
-                                variant="outline"
-                                className="text-destructive hover:text-destructive/80" 
-                                onClick={() => handleDeleteScript(script.id)}
-                              >
-                                <Trash2 className="h-4 w-4 mr-1" />
-                                Delete
-                              </Button>
+                              <div className="flex flex-row gap-2">
+                                <Button
+                                  size="sm"
+                                  onClick={() => handleEditStart(script)}
+                                  variant="outline"
+                                  className="w-full"
+                                >
+                                  <Edit3 className="h-4 w-4 mr-1" />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  onClick={() =>
+                                    handleCopyScript(script.content)
+                                  }
+                                  variant="outline"
+                                  className="w-full"
+                                >
+                                  <Clipboard className="h-4 w-4 mr-1" />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  onClick={() =>
+                                    handleDownloadScript(
+                                      script.content,
+                                      script.video_id
+                                    )
+                                  }
+                                  variant="outline"
+                                  className="w-full"
+                                >
+                                  <Download className="h-4 w-4" />
+                                </Button>
+                              </div>
+                              <div className="flex gap-2 flex-row">
+                                <Button
+                                  size="sm"
+                                  onClick={() =>
+                                    openYouTubeVideo(script.video_id)
+                                  }
+                                  variant="outline"
+                                  className="w-full"
+                                >
+                                  <ExternalLink className="h-4 w-4 mr-1" />
+                                  View
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="text-destructive hover:text-destructive/80 w-full"
+                                  onClick={() => handleDeleteScript(script.id)}
+                                >
+                                  <Trash2 className="h-4 w-4 mr-1" />
+                                  Delete
+                                </Button>
+                              </div>
                             </>
                           )}
                         </div>
@@ -349,10 +337,6 @@ const Scripts: React.FC = () => {
                                 className="min-h-[300px] border-0 focus:ring-0 bg-transparent resize-none font-mono text-sm"
                                 placeholder="Edit your script..."
                               />
-                              <div className="mt-2 text-xs text-muted-foreground flex items-center gap-2">
-                                <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
-                                Auto-saving changes...
-                              </div>
                             </div>
                           ) : (
                             <ScrollArea className="h-80 p-4">
@@ -377,13 +361,15 @@ const Scripts: React.FC = () => {
                   <FileText className="h-8 w-8 text-muted-foreground" />
                 </div>
                 <div className="space-y-2">
-                  <h3 className="text-xl font-semibold">No scripts saved yet</h3>
+                  <h3 className="text-xl font-semibold">
+                    No scripts saved yet
+                  </h3>
                   <p className="text-muted-foreground">
                     Create your first script from competitor videos
                   </p>
                 </div>
-                <Button 
-                  onClick={() => navigate('/dashboard/clone')}
+                <Button
+                  onClick={() => navigate("/dashboard/clone")}
                   className="mt-4"
                 >
                   <Edit3 className="mr-2 h-4 w-4" />
