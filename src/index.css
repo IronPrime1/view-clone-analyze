@@ -81,46 +81,6 @@
     --sidebar-accent: 217.2 32.6% 17.5%;
     --sidebar-accent-foreground: 210 40% 98%;
   }
-
-  .neon {
-    --background: 0 0% 8%;
-    --foreground: 120 100% 80%;
- 
-    --card: 0 0% 10%;
-    --card-foreground: 120 100% 85%;
- 
-    --popover: 0 0% 10%;
-    --popover-foreground: 120 100% 85%;
- 
-    --primary: 120 100% 50%;
-    --primary-foreground: 0 0% 8%;
- 
-    --secondary: 0 0% 15%;
-    --secondary-foreground: 120 100% 80%;
- 
-    --muted: 0 0% 15%;
-    --muted-foreground: 120 60% 60%;
- 
-    --accent: 0 0% 15%;
-    --accent-foreground: 120 100% 80%;
- 
-    --destructive: 0 100% 50%;
-    --destructive-foreground: 120 100% 80%;
- 
-    --border: 120 100% 50%;
-    --input: 0 0% 15%;
-    --ring: 120 100% 50%;
- 
-    --radius: 0.5rem;
-    
-    --youtube-red: 0 100% 50%;
-    
-    --sidebar: 0 0% 8%;
-    --sidebar-foreground: 120 100% 80%;
-    --sidebar-border: 120 100% 50%;
-    --sidebar-accent: 0 0% 15%;
-    --sidebar-accent-foreground: 120 100% 80%;
-  }
 }
  
 @layer base {
@@ -140,28 +100,6 @@
   @apply md:hidden fixed bottom-0 left-0 right-0 flex justify-around items-center bg-background border-t border-border p-2 z-10;
 }
 
-/* Neon glow effects */
-.neon .neon-glow {
-  box-shadow: 0 0 5px hsl(var(--primary)), 0 0 10px hsl(var(--primary)), 0 0 15px hsl(var(--primary));
-}
-
-.neon .neon-text {
-  text-shadow: 0 0 5px hsl(var(--primary)), 0 0 10px hsl(var(--primary));
-}
-
-.neon .neon-border {
-  border-color: hsl(var(--primary));
-  box-shadow: 0 0 10px hsl(var(--primary));
-}
-
-.neon button:hover {
-  box-shadow: 0 0 15px hsl(var(--primary));
-}
-
-.neon .card-hover:hover {
-  box-shadow: 0 0 20px hsl(var(--primary)), 0 4px 15px rgba(0, 0, 0, 0.2);
-}
-
 /* Custom Animations */
 @keyframes fade-in {
   from {
@@ -174,39 +112,14 @@
   }
 }
 
-@keyframes float {
-  0%, 100% {
-    transform: translateY(0px);
-  }
-  50% {
+@keyframes slide-down {
+  from {
+    opacity: 0;
     transform: translateY(-10px);
   }
-}
-
-@keyframes glow {
-  0%, 100% {
+  to {
     opacity: 1;
-  }
-  50% {
-    opacity: 0.5;
-  }
-}
-
-@keyframes gradient-shift {
-  0%, 100% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-}
-
-@keyframes neon-pulse {
-  0%, 100% {
-    box-shadow: 0 0 5px hsl(var(--primary)), 0 0 10px hsl(var(--primary)), 0 0 15px hsl(var(--primary));
-  }
-  50% {
-    box-shadow: 0 0 10px hsl(var(--primary)), 0 0 20px hsl(var(--primary)), 0 0 30px hsl(var(--primary));
+    transform: translateY(0);
   }
 }
 
@@ -214,21 +127,8 @@
   animation: fade-in 0.6s ease-out forwards;
 }
 
-.animate-float {
-  animation: float 3s ease-in-out infinite;
-}
-
-.animate-glow {
-  animation: glow 2s ease-in-out infinite;
-}
-
-.animate-gradient {
-  background-size: 200% 200%;
-  animation: gradient-shift 3s ease infinite;
-}
-
-.neon .animate-neon-pulse {
-  animation: neon-pulse 2s ease-in-out infinite;
+.animate-slide-down {
+  animation: slide-down 0.3s ease-out forwards;
 }
 
 /* Smooth Scrolling */
@@ -251,25 +151,8 @@ html {
   border-radius: 4px;
 }
 
-.neon ::-webkit-scrollbar-thumb {
-  background: hsl(var(--primary));
-  box-shadow: 0 0 5px hsl(var(--primary));
-}
-
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(0, 0, 0, 0.5);
-}
-
-/* Glass Morphism Effect */
-.glass-morphism {
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-}
-
-.neon .glass-morphism {
-  background: rgba(0, 255, 0, 0.1);
-  border: 1px solid hsl(var(--primary));
 }
 
 /* Hover Effects */
@@ -278,12 +161,8 @@ html {
 }
 
 .hover-lift:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-}
-
-.neon .hover-lift:hover {
-  box-shadow: 0 20px 40px rgba(0, 255, 0, 0.3);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
 }
 
 /* Responsive utilities */
