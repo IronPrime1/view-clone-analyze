@@ -7,89 +7,14 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { PlusCircle, RefreshCw, Upload, User, PlaySquare, Eye, ThumbsUp, MessageSquare } from 'lucide-react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 
 const Dashboard: React.FC = () => {
-  const { ownChannel, competitors, viewsData, topVideos, addCompetitor, refreshData, isLoading, login, triggerDailyViewsUpdate } = useYoutube();
+  const { ownChannel, competitors, topVideos, addCompetitor, refreshData, isLoading, login } = useYoutube();
   const [channelInput, setChannelInput] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
   const navigate = useNavigate();
-  
-  // Format chart data from viewsData
-  const prepareChartData = () => {
-    // If there's no data, return empty array
-    if (!viewsData || Object.keys(viewsData).length === 0) {
-      return [];
-    }
-    
-    // Check if any channel has actual data
-    let hasActualData = false;
-    Object.values(viewsData).forEach(channelData => {
-      if (channelData && channelData.length > 0) {
-        hasActualData = true;
-      }
-    });
-    
-    if (!hasActualData) {
-      return [];
-    }
-    
-    // Get all dates from all channels
-    const allDates: string[] = [];
-    Object.values(viewsData).forEach(channelData => {
-      if (channelData && channelData.length > 0) {
-        channelData.forEach(item => {
-          if (!allDates.includes(item.date)) {
-            allDates.push(item.date);
-          }
-        });
-      }
-    });
-    
-    // Sort dates
-    allDates.sort();
-    
-    if (allDates.length === 0) {
-      return [];
-    }
-    
-    // Get yesterday's date as the cutoff
-    const yesterday = new Date();
-    yesterday.setDate(yesterday.getDate() - 1);
-    const yesterdayStr = yesterday.toISOString().split('T')[0];
-    
-    // Filter dates to only include up to yesterday
-    const filteredDates = allDates.filter(date => date <= yesterdayStr);
-    
-    // Prepare chart data with dates and views for each channel
-    return filteredDates.map(date => {
-      const dataPoint: any = { date };
-      
-      // Add own channel data
-      if (ownChannel && viewsData[ownChannel.id]) {
-        const dayData = viewsData[ownChannel.id]?.find(d => d.date === date);
-        if (dayData) {
-          dataPoint[ownChannel.title || 'Your Channel'] = dayData.views;
-        }
-      }
-      
-      // Add competitor data
-      competitors.forEach(comp => {
-        if (viewsData[comp.id]) {
-          const dayData = viewsData[comp.id]?.find(d => d.date === date);
-          if (dayData) {
-            dataPoint[comp.title] = dayData.views;
-          }
-        }
-      });
-      
-      return dataPoint;
-    });
-  };
-  
-  const chartData = prepareChartData();
   
   const handleAddCompetitor = async () => {
     if (!channelInput.trim()) {
@@ -99,12 +24,6 @@ const Dashboard: React.FC = () => {
     await addCompetitor(channelInput);
     setChannelInput('');
     setDialogOpen(false);
-  };
-  
-  // Generate colors based on index
-  const getLineColor = (index: number) => {
-    const colors = ['#6b46c1', '#e53e3e', '#38a169', '#d69e2e', '#3182ce', '#d53f8c', '#718096'];
-    return colors[index % colors.length];
   };
   
   const handleConnectYoutube = () => {
@@ -122,20 +41,8 @@ const Dashboard: React.FC = () => {
     return views.toString();
   };
   
-  // Format dates for better readability
-  const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr);
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-  };
-  
-  // Check if we have actual data for views comparison
-  const hasViewData = chartData.length > 0;
-  
   // Check if we have actual top videos data
   const hasTopVideosData = topVideos.length > 0;
-
-  // Check if we specifically have user channel data
-  const hasUserChannelData = ownChannel && viewsData[ownChannel.id] && viewsData[ownChannel.id].length > 0;
   
   return (
     <div className="space-y-6 px-2 pb-2">
@@ -238,7 +145,7 @@ const Dashboard: React.FC = () => {
         </Card>
       )}
       
-      {/* Simplified Top Videos Card */}
+      {/* Top Videos Card */}
       {ownChannel && hasTopVideosData && (
         <Card className="shadow-sm">
           <CardHeader className="pb-3 border-b pt-3 mt-0">
@@ -274,107 +181,6 @@ const Dashboard: React.FC = () => {
           </CardContent>
         </Card>
       )}
-      
-      <Card className="shadow-sm">
-        <CardHeader className="pb-3 pt-3 mt-0">
-          <CardTitle className="text-lg text-center">Views Comparison</CardTitle>
-        </CardHeader>
-        <CardContent className="pr-3 pl-0 pt-1 pb-0">
-          <div className="sm:h-[200px] h-[150px]">
-            {hasViewData ? (
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart
-                  data={chartData}
-                  margin={{
-                    top: 5,
-                    right: 20,
-                    left: 0,
-                    bottom: 20,
-                  }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
-                  <XAxis 
-                    dataKey="date" 
-                    fontSize={10} 
-                    tickFormatter={formatDate}
-                    tick={{fontSize: 10}}
-                  />
-                  <YAxis 
-                    fontSize={10} 
-                    width={40} 
-                    tickFormatter={(value: number) => formatViewCount(value)}
-                    tick={{fontSize: 10}}
-                  />
-                  <Tooltip content={({ active, payload, label }) => {
-                    if (active && payload?.length) {
-                      return (
-                        <div className="bg-background border border-border p-3 rounded-lg shadow-lg">
-                          <p className="font-medium mb-2">{formatDate(label)}</p>
-                          {payload.map((entry, index) => (
-                            <div key={index} className="flex justify-between items-center gap-4 mb-1">
-                              <div className="flex items-center gap-1">
-                                <div className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.color }} />
-                                <p className="text-xs text-muted-foreground">{entry.name}</p>
-                              </div>
-                              <p className="font-mono text-xs font-medium">{formatViewCount(Number(entry.value))} views</p>
-                            </div>
-                          ))}
-                        </div>
-                      );
-                    }
-                    return null;
-                  }} />
-                  <Legend 
-                    iconSize={8} 
-                    iconType="circle" 
-                    wrapperStyle={{ fontSize: '10px', paddingTop: '8px' }} 
-                  />
-                  
-                  {/* Own channel line */}
-                  {ownChannel && viewsData[ownChannel.id] && viewsData[ownChannel.id].length > 0 && (
-                    <Line
-                      type="monotone"
-                      dataKey={ownChannel.title || 'Your Channel'}
-                      stroke="#6b46c1"
-                      strokeWidth={2}
-                      dot={{ r: 3 }}
-                      activeDot={{ r: 6 }}
-                    />
-                  )}
-                  
-                  {/* Competitor lines */}
-                  {competitors.map((comp, index) => (
-                    viewsData[comp.id] && viewsData[comp.id].length > 0 && (
-                      <Line
-                        key={comp.id}
-                        type="monotone"
-                        dataKey={comp.title}
-                        stroke={getLineColor(index + 1)}
-                        strokeWidth={1.5}
-                        dot={{ r: 2 }}
-                      />
-                    )
-                  ))}
-                </LineChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="flex items-center justify-center h-full">
-                <p className="text-muted-foreground text-center">
-                  {isLoading ? "Loading data..." : "No real view data available."}
-                </p>
-              </div>
-            )}
-          </div>
-          {!hasUserChannelData && ownChannel && (
-            <div className="flex justify-center mt-2">
-              <Button variant="outline" size="sm" onClick={triggerDailyViewsUpdate} disabled={isLoading} className="text-xs">
-                <RefreshCw className={`h-3 w-3 mr-1 ${isLoading ? 'animate-spin' : ''}`} /> 
-                Fetch Real Data
-              </Button>
-            </div>
-          )}
-        </CardContent>
-      </Card>
       
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {/* Competitor Channel Cards */}
