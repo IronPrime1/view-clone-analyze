@@ -14,7 +14,6 @@ import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import Landing from "./pages/Landing";
 import { YoutubeProvider } from "./contexts/YoutubeContext";
-import { ThemeProvider } from "./contexts/ThemeContext";
 
 // Add YouTube-specific color to Tailwind
 import "./index.css";
@@ -29,29 +28,28 @@ const queryClient = new QueryClient({
   },
 });
 
+
 const App = () => (
   <BrowserRouter>
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider>
-        <YoutubeProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Sonner />
-            <Routes>
-              <Route path="/" element={<Landing />} />
-              <Route path="/auth" element={<Auth />} />
-              <Route path="/dashboard" element={<Layout />}>
-                <Route index element={<Dashboard />} />
-                <Route path="competitors" element={<Competitors />} />
-                <Route path="clone" element={<Clone />} />
-                <Route path="scripts" element={<Scripts />} />
-                <Route path="*" element={<NotFound />} />
-              </Route>
+      <YoutubeProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <Routes>
+            <Route path="/" element={<Landing />} />
+            <Route path="/auth" element={<Auth />} />
+            <Route path="/dashboard" element={<Layout />}>
+              <Route index element={<Dashboard />} />
+              <Route path="competitors" element={<Competitors />} />
+              <Route path="clone" element={<Clone />} />
+              <Route path="scripts" element={<Scripts />} />
               <Route path="*" element={<NotFound />} />
-            </Routes>
-          </TooltipProvider>
-        </YoutubeProvider>
-      </ThemeProvider>
+            </Route>
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </TooltipProvider>
+      </YoutubeProvider>
     </QueryClientProvider>
   </BrowserRouter>
 );
