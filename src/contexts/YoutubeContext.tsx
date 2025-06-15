@@ -1,5 +1,6 @@
+
 import React, { createContext, useState, useContext, useEffect, useRef } from 'react';
-import { supabase, fetchYouTubeAnalytics } from '../integrations/supabase/client';
+import { supabase } from '../integrations/supabase/client';
 import { toast } from 'sonner';
 
 // Define types
@@ -32,29 +33,18 @@ interface Channel {
   videos?: Video[];
 }
 
-interface DailyViews {
-  date: string;
-  views: number;
-}
-
-interface ViewsData {
-  [channelId: string]: DailyViews[];
-}
-
 interface YoutubeContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   ownChannel: Channel | null;
   competitors: Channel[];
   topVideos: Video[];
-  viewsData: ViewsData;
   login: () => Promise<void>;
   logout: () => Promise<void>;
   addCompetitor: (channelUrl: string) => Promise<void>;
   removeCompetitor: (id: string) => Promise<void>;
   refreshData: () => Promise<void>;
   getSavedScripts: (videoId: string) => SavedScript[];
-  triggerDailyViewsUpdate: () => Promise<void>;
 }
 
 // Create the context
@@ -75,7 +65,6 @@ export const YoutubeProvider: React.FC<{children: React.ReactNode}> = ({ childre
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [ownChannel, setOwnChannel] = useState<Channel | null>(null);
   const [competitors, setCompetitors] = useState<Channel[]>([]);
-  const [viewsData, setViewsData] = useState<ViewsData>({});
   const [savedScripts, setSavedScripts] = useState<{[videoId: string]: SavedScript[]}>({});
   const [topVideos, setTopVideos] = useState<Video[]>([]);
   const sessionLoadedRef = useRef(false);
@@ -110,7 +99,6 @@ export const YoutubeProvider: React.FC<{children: React.ReactNode}> = ({ childre
           } else if (event === 'SIGNED_OUT') {
             setOwnChannel(null);
             setCompetitors([]);
-            setViewsData({});
             setSavedScripts({});
             setTopVideos([]);
           }
@@ -163,7 +151,7 @@ export const YoutubeProvider: React.FC<{children: React.ReactNode}> = ({ childre
     return savedScripts[videoId] || [];
   };
   
-  // Load user's data: profile, competitor channels, and analytics
+  // Load user's data: profile, competitor channels
   const loadUserData = async (userId: string) => {
     setIsLoading(true);
     
@@ -185,9 +173,6 @@ export const YoutubeProvider: React.FC<{children: React.ReactNode}> = ({ childre
       
       // Load competitor channels
       await loadCompetitors();
-      
-      // Load daily views data
-      await loadViewsData();
       
       // Load saved scripts
       await loadSavedScripts();
@@ -319,86 +304,6 @@ export const YoutubeProvider: React.FC<{children: React.ReactNode}> = ({ childre
     }
   };
   
-  // Load daily views data from Supabase and YouTube Analytics
-  const loadViewsData = async () => {
-    try {
-      // First, try to get real YouTube Analytics data for the user's channel
-      if (ownChannel) {
-        try {
-          const { data: analyticsData, error: analyticsError } = await fetchYouTubeAnalytics();
-          
-          if (!analyticsError && Array.isArray(analyticsData) && analyticsData.length > 0) {
-            // We have real YouTube Analytics data for the user's channel
-            setViewsData(prev => ({
-              ...prev,
-              [ownChannel.id]: analyticsData
-            }));
-            
-            // No need to go further for user's channel
-            console.log("Loaded real YouTube Analytics data:", analyticsData);
-          } else {
-            console.log("No YouTube Analytics data available, fallback to stored data");
-          }
-        } catch (error) {
-          console.error("Error fetching YouTube Analytics:", error);
-        }
-      }
-      
-      // Get stored data for competitors and/or fallback for user's channel
-      const { data, error } = await supabase
-        .from('daily_views')
-        .select('channel_id, date, views')
-        .gte('date', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0])
-        .order('date', { ascending: true });
-      
-      if (error) throw error;
-      
-      const views: ViewsData = {};
-      
-      data?.forEach(item => {
-        if (!views[item.channel_id]) {
-          views[item.channel_id] = [];
-        }
-        
-        views[item.channel_id].push({
-          date: item.date,
-          views: item.views
-        });
-      });
-      
-      // Get up to yesterday's data (exclude today's incomplete data)
-      const yesterday = new Date();
-      yesterday.setDate(yesterday.getDate() - 1);
-      const yesterdayStr = yesterday.toISOString().split('T')[0];
-      
-      Object.keys(views).forEach(channelId => {
-        // Skip if we already have real YouTube data for this channel
-        if (ownChannel && channelId === ownChannel.id && viewsData[channelId]) {
-          return;
-        }
-        
-        const channelViews = views[channelId];
-        // Filter to only include data up to yesterday
-        views[channelId] = channelViews.filter(item => item.date <= yesterdayStr);
-        
-        // Take last 7 days maximum
-        if (views[channelId].length > 7) {
-          views[channelId] = views[channelId].slice(-7);
-        }
-      });
-      
-      // Merge with existing data, preserving real YouTube data if available
-      setViewsData(prev => ({
-        ...prev,
-        ...views
-      }));
-      
-      console.log("Loaded views data:", {...views, ...viewsData});
-    } catch (error) {
-      console.error("Error loading views data:", error);
-    }
-  };
-  
   // Log in with YouTube OAuth
   const login = async () => {
     setIsLoading(true);
@@ -450,7 +355,7 @@ export const YoutubeProvider: React.FC<{children: React.ReactNode}> = ({ childre
     setIsLoading(true);
     
     try {
-      // Extract channel ID or username from input
+      // The channelInput is now already processed by extractChannelId in the component
       const channelId = channelInput;
       
       // Call our edge function to add the competitor
@@ -477,7 +382,6 @@ export const YoutubeProvider: React.FC<{children: React.ReactNode}> = ({ childre
       
       // Refresh competitors list
       await loadCompetitors();
-      await loadViewsData();
       
     } catch (error: any) {
       console.error("Error adding competitor:", error);
@@ -517,22 +421,8 @@ export const YoutubeProvider: React.FC<{children: React.ReactNode}> = ({ childre
         if (deleteError) throw deleteError;
       }
       
-      // Also remove the daily views
-      const { error: viewsError } = await supabase
-        .from('daily_views')
-        .delete()
-        .eq('channel_id', youtubeId)
-        .eq('user_id', userData.user.id);
-        
-      if (viewsError) throw viewsError;
-      
       // Update the competitors list
       setCompetitors(competitors.filter(comp => comp.id !== youtubeId));
-      
-      // Update views data
-      const newViewsData = {...viewsData};
-      delete newViewsData[youtubeId];
-      setViewsData(newViewsData);
       
       toast.success("Competitor removed");
     } catch (error: any) {
@@ -558,7 +448,6 @@ export const YoutubeProvider: React.FC<{children: React.ReactNode}> = ({ childre
       if (error) throw error;
       
       await loadCompetitors();
-      await loadViewsData();
       
       if (ownChannel) {
         const { data: profile } = await supabase
@@ -576,9 +465,6 @@ export const YoutubeProvider: React.FC<{children: React.ReactNode}> = ({ childre
         }
       }
       
-      // Also trigger daily views update
-      await triggerDailyViewsUpdate();
-      
       toast.success("Data refreshed successfully");
     } catch (error) {
       console.error("Error refreshing data:", error);
@@ -588,40 +474,18 @@ export const YoutubeProvider: React.FC<{children: React.ReactNode}> = ({ childre
     }
   };
   
-    // Trigger daily views update
-    const triggerDailyViewsUpdate = async () => {
-      try {
-        const { data, error } = await supabase.functions.invoke('youtube-fetch', {
-          body: {
-            action: 'update_daily_views'
-          }
-        });
-  
-        if (error) {
-          console.error("Error triggering daily views update:", error);
-        } else {
-          console.log("Daily views update triggered successfully:", data);
-        }
-      } catch (error) {
-        console.error("Error triggering daily views update:", error);
-      }
-    };
-
-  
   const value = {
     isAuthenticated,
     isLoading,
     ownChannel,
     competitors,
     topVideos,
-    viewsData,
     login,
     logout,
     addCompetitor,
     removeCompetitor,
     refreshData,
-    getSavedScripts,
-    triggerDailyViewsUpdate
+    getSavedScripts
   };
   
   return (

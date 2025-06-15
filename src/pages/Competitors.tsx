@@ -17,12 +17,41 @@ import {
   ExternalLink 
 } from 'lucide-react';
 import { Badge } from '../components/ui/badge';
-import { ScrollArea } from '../components/ui/scroll-area';
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+
+// Helper function to extract channel ID from YouTube URL
+const extractChannelId = (input: string): string => {
+  // If it's already a channel ID (starts with UC and is 24 characters)
+  if (input.startsWith('UC') && input.length === 24) {
+    return input;
+  }
+  
+  // Handle different YouTube URL formats
+  const patterns = [
+    // youtube.com/channel/UC...
+    /(?:youtube\.com\/channel\/)([a-zA-Z0-9_-]{24})/,
+    // youtube.com/c/username or youtube.com/@username
+    /(?:youtube\.com\/(?:c\/|@))([a-zA-Z0-9_-]+)/,
+    // youtube.com/user/username
+    /(?:youtube\.com\/user\/)([a-zA-Z0-9_-]+)/,
+    // youtu.be URLs (not for channels, but handle gracefully)
+    /(?:youtu\.be\/)([a-zA-Z0-9_-]+)/,
+  ];
+  
+  for (const pattern of patterns) {
+    const match = input.match(pattern);
+    if (match) {
+      return match[1];
+    }
+  }
+  
+  // If no pattern matches, return the input as-is (could be a username or channel ID)
+  return input.trim();
+};
 
 const Competitors: React.FC = () => {
   const { competitors, addCompetitor, removeCompetitor, refreshData, isLoading } = useYoutube();
@@ -35,7 +64,8 @@ const Competitors: React.FC = () => {
       return;
     }
     
-    await addCompetitor(channelInput);
+    const channelId = extractChannelId(channelInput);
+    await addCompetitor(channelId);
     setChannelInput('');
     setDialogOpen(false);
   };
@@ -69,14 +99,17 @@ const Competitors: React.FC = () => {
                 <DialogTitle>Add Competitor Channel</DialogTitle>
               </DialogHeader>
               <div className="pt-4">
-                <Label htmlFor="channel-url">Channel ID</Label>
+                <Label htmlFor="channel-url">Channel URL or ID</Label>
                 <Input
                   id="channel-url"
-                  placeholder="channel ID"
+                  placeholder="https://youtube.com/@channelname or channel ID"
                   value={channelInput}
                   onChange={(e) => setChannelInput(e.target.value)}
                   className="mt-2"
                 />
+                <p className="text-sm text-muted-foreground mt-1">
+                  You can paste a YouTube channel URL or enter the channel ID directly
+                </p>
               </div>
               <DialogFooter className="gap-3 mt-0 pt-0">
                 <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
@@ -202,7 +235,6 @@ const Competitors: React.FC = () => {
             </Collapsible>
           ))}
         </div>
-
       )}
     </div>
   );
