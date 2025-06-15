@@ -30,30 +30,28 @@ const queryClient = new QueryClient({
 
 
 const App = () => (
-  <React.StrictMode>
-    <BrowserRouter>
-      <QueryClientProvider client={queryClient}>
-        <YoutubeProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Sonner />
-            <Routes>
-              <Route path="/" element={<Landing />} />
-              <Route path="/auth" element={<Auth />} />
-              <Route path="/dashboard" element={<Layout />}>
-                <Route index element={<Dashboard />} />
-                <Route path="competitors" element={<Competitors />} />
-                <Route path="clone" element={<Clone />} />
-                <Route path="scripts" element={<Scripts />} />
-                <Route path="*" element={<NotFound />} />
-              </Route>
+  <BrowserRouter>
+    <QueryClientProvider client={queryClient}>
+      <YoutubeProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <Routes>
+            <Route path="/" element={<Landing />} />
+            <Route path="/auth" element={<Auth />} />
+            <Route path="/dashboard" element={<Layout />}>
+              <Route index element={<Dashboard />} />
+              <Route path="competitors" element={<Competitors />} />
+              <Route path="clone" element={<Clone />} />
+              <Route path="scripts" element={<Scripts />} />
               <Route path="*" element={<NotFound />} />
-            </Routes>
-          </TooltipProvider>
-        </YoutubeProvider>
-      </QueryClientProvider>
-    </BrowserRouter>
-  </React.StrictMode>
+            </Route>
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </TooltipProvider>
+      </YoutubeProvider>
+    </QueryClientProvider>
+  </BrowserRouter>
 );
 
 export default App;
