@@ -1,9 +1,12 @@
+
 import React from 'react'
 import { Button } from '@/components/ui/button';
 import { useYoutube } from '../../contexts/YoutubeContext';
+import { useNavigate } from 'react-router-dom';
 
 function Nav() {
-  const { isAuthenticated, logout } = useYoutube();
+  const { isAuthenticated } = useYoutube();
+  const navigate = useNavigate();
    const handleAction = () => {
     if (isAuthenticated) {
       navigate('/dashboard');

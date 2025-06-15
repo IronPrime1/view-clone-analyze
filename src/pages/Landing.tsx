@@ -54,7 +54,7 @@ const Landing: React.FC = () => {
               {isAuthenticated ? "Go to Dashboard" : "Get Started"} <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
             <Button 
-              variant="inline" 
+              variant="outline" 
               className="text-white hover:bg-white/10 text-lg px-8 py-2 h-auto rounded-xl sm:mx-0 mx-auto border border-white/20"
               onClick={() => window.scrollTo({ top: document.getElementById('features')?.offsetTop, behavior: 'smooth' })}
             >

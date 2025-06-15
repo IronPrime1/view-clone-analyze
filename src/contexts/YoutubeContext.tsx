@@ -1,4 +1,3 @@
-
 import React, { createContext, useState, useContext, useEffect, useRef } from 'react';
 import { supabase, fetchYouTubeAnalytics } from '../integrations/supabase/client';
 import { toast } from 'sonner';
@@ -588,6 +587,26 @@ export const YoutubeProvider: React.FC<{children: React.ReactNode}> = ({ childre
       setIsLoading(false);
     }
   };
+  
+    // Trigger daily views update
+    const triggerDailyViewsUpdate = async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke('youtube-fetch', {
+          body: {
+            action: 'update_daily_views'
+          }
+        });
+  
+        if (error) {
+          console.error("Error triggering daily views update:", error);
+        } else {
+          console.log("Daily views update triggered successfully:", data);
+        }
+      } catch (error) {
+        console.error("Error triggering daily views update:", error);
+      }
+    };
+
   
   const value = {
     isAuthenticated,
