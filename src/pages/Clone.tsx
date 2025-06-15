@@ -1,9 +1,9 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Clipboard, Download, Save, Wand2 } from 'lucide-react';
 import { useYoutube } from '../contexts/YoutubeContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -14,10 +14,18 @@ const Clone: React.FC = () => {
   const [selectedCompetitor, setSelectedCompetitor] = useState<string | null>(null);
   const [selectedVideo, setSelectedVideo] = useState<string | null>(null);
   const [generatedScript, setGeneratedScript] = useState<string | null>(null);
+  const [editableScript, setEditableScript] = useState<string>('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [savedScripts, setSavedScripts] = useState<any[]>([]);
   const [ownVideos, setOwnVideos] = useState<any[]>([]);
   const [selectedOwnVideo, setSelectedOwnVideo] = useState<string | null>(null);
+  
+  // Update editable script when generated script changes
+  useEffect(() => {
+    if (generatedScript) {
+      setEditableScript(generatedScript);
+    }
+  }, [generatedScript]);
   
   // Fetch user's videos on component mount
   useEffect(() => {
@@ -74,6 +82,7 @@ const Clone: React.FC = () => {
     
     setIsGenerating(true);
     setGeneratedScript(null);
+    setEditableScript('');
     
     try {
       const video = getVideoById(selectedVideo);
@@ -104,20 +113,20 @@ const Clone: React.FC = () => {
     }
   };
   
-  // Handle copy to clipboard
+  // Handle copy to clipboard - now uses editable script
   const handleCopyScript = () => {
-    if (!generatedScript) return;
+    if (!editableScript) return;
     
-    navigator.clipboard.writeText(generatedScript)
+    navigator.clipboard.writeText(editableScript)
       .then(() => toast.success("Copied to clipboard"))
       .catch(() => toast.error("Failed to copy to clipboard"));
   };
   
-  // Handle download script
+  // Handle download script - now uses editable script
   const handleDownloadScript = () => {
-    if (!generatedScript) return;
+    if (!editableScript) return;
     
-    const blob = new Blob([generatedScript], { type: 'text/plain' });
+    const blob = new Blob([editableScript], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -130,9 +139,9 @@ const Clone: React.FC = () => {
     toast.success("Script downloaded");
   };
   
-  // Handle save script
+  // Handle save script - now uses editable script
   const handleSaveScript = async () => {
-    if (!generatedScript || !selectedVideo) return;
+    if (!editableScript || !selectedVideo) return;
     
     try {
       const { data: userData } = await supabase.auth.getUser();
@@ -148,7 +157,7 @@ const Clone: React.FC = () => {
         .insert({
           user_id: userId,
           video_id: selectedVideo,
-          content: generatedScript
+          content: editableScript
         })
         .select();
       
@@ -282,14 +291,17 @@ const Clone: React.FC = () => {
             <CardHeader className="sm:pt-4 pt-3 mt-0 mb-0 pb-4 border-b">
               <CardTitle className="text-xl pt-0 mt-0">Generated Script</CardTitle>
               <CardDescription>
-                A customized script based on the selected video content
+                A customized script based on the selected video content - edit as needed
               </CardDescription>
             </CardHeader>
             <CardContent className="flex-1 overflow-auto pt-6">
               {generatedScript ? (
-                <div className="font-mono text-sm rounded-md h-[300px] sm:h-[400px]overflow-y-auto whitespace-pre-wrap pt-2">
-                  {generatedScript}
-                </div>
+                <Textarea
+                  value={editableScript}
+                  onChange={(e) => setEditableScript(e.target.value)}
+                  className="min-h-[300px] sm:min-h-[400px] resize-none font-mono text-sm"
+                  placeholder="Your edited script will appear here..."
+                />
               ) : (
                 <div className="flex items-center justify-center h-[200px] sm:h-[440px] border-2 border-dashed rounded-md">
                   <div className="text-center">
