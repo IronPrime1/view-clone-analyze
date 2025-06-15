@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.4.0";
 
@@ -14,6 +13,65 @@ async function handleCors(req: Request) {
     return new Response(null, { headers: corsHeaders });
   }
   return null;
+}
+
+// Helper function to resolve channel handle/URL to channel ID
+async function resolveChannelId(input: string, apiKey: string): Promise<string> {
+  // If it's already a channel ID (starts with UC and is 24 characters)
+  if (input.startsWith('UC') && input.length === 24) {
+    return input;
+  }
+  
+  let searchQuery = input;
+  
+  // Extract handle or username from various YouTube URL formats
+  const patterns = [
+    // youtube.com/@handle
+    /(?:youtube\.com\/@)([a-zA-Z0-9_.-]+)/,
+    // youtube.com/c/channel
+    /(?:youtube\.com\/c\/)([a-zA-Z0-9_.-]+)/,
+    // youtube.com/user/username
+    /(?:youtube\.com\/user\/)([a-zA-Z0-9_.-]+)/,
+    // youtube.com/channel/UC... (actual channel ID)
+    /(?:youtube\.com\/channel\/)([a-zA-Z0-9_-]{24})/,
+  ];
+  
+  for (const pattern of patterns) {
+    const match = input.match(pattern);
+    if (match) {
+      if (pattern.source.includes('/channel/') && match[1].startsWith('UC')) {
+        // This is already a channel ID
+        return match[1];
+      }
+      searchQuery = match[1];
+      break;
+    }
+  }
+  
+  // Remove @ symbol if present
+  searchQuery = searchQuery.replace('@', '');
+  
+  console.log(`Searching for channel with query: ${searchQuery}`);
+  
+  // Use YouTube API search to find the channel
+  const searchResponse = await fetch(
+    `https://www.googleapis.com/youtube/v3/search?part=snippet&type=channel&q=${encodeURIComponent(searchQuery)}&maxResults=1&key=${apiKey}`
+  );
+  
+  if (!searchResponse.ok) {
+    throw new Error("Failed to search for channel");
+  }
+  
+  const searchData = await searchResponse.json();
+  
+  if (!searchData.items || searchData.items.length === 0) {
+    throw new Error(`No channel found for: ${searchQuery}`);
+  }
+  
+  const channelId = searchData.items[0].id.channelId;
+  console.log(`Resolved ${searchQuery} to channel ID: ${channelId}`);
+  
+  return channelId;
 }
 
 // Helper function to fetch channel data
@@ -235,8 +293,12 @@ serve(async (req) => {
       case 'add_competitor': {
         console.log("Adding competitor channel:", channelId);
         
-        // Fetch channel data
-        const channelData = await fetchChannelData(channelId, youtubeApiKey);
+        // Resolve the channel input (URL/handle) to actual channel ID
+        const resolvedChannelId = await resolveChannelId(channelId, youtubeApiKey);
+        console.log("Resolved channel ID:", resolvedChannelId);
+        
+        // Fetch channel data using the resolved channel ID
+        const channelData = await fetchChannelData(resolvedChannelId, youtubeApiKey);
         
         // Insert channel into database
         const { data: competitorData, error: competitorError } = await supabaseAdmin
@@ -259,7 +321,7 @@ serve(async (req) => {
         
         // Fetch popular videos for the channel
         console.log("Fetching popular videos for the competitor channel");
-        const videos = await fetchTopVideos(channelId, youtubeApiKey);
+        const videos = await fetchTopVideos(resolvedChannelId, youtubeApiKey);
         
         // Insert videos into database
         if (videos.length > 0) {
@@ -306,11 +368,14 @@ serve(async (req) => {
       case 'get_channel_data': {
         console.log("Getting channel data for:", channelId);
         
+        // Resolve the channel input to actual channel ID
+        const resolvedChannelId = await resolveChannelId(channelId, youtubeApiKey);
+        
         // Fetch channel data
-        const channelData = await fetchChannelData(channelId, youtubeApiKey);
+        const channelData = await fetchChannelData(resolvedChannelId, youtubeApiKey);
         
         // Fetch videos
-        const videos = await fetchTopVideos(channelId, youtubeApiKey);
+        const videos = await fetchTopVideos(resolvedChannelId, youtubeApiKey);
         
         return new Response(
           JSON.stringify({
@@ -330,8 +395,11 @@ serve(async (req) => {
       case 'get_top_videos': {
         console.log("Getting top videos for:", channelId);
         
+        // Resolve the channel input to actual channel ID  
+        const resolvedChannelId = await resolveChannelId(channelId, youtubeApiKey);
+        
         // Fetch top videos (increased to fetch top 3)
-        const videos = await fetchTopVideos(channelId, youtubeApiKey, 3);
+        const videos = await fetchTopVideos(resolvedChannelId, youtubeApiKey, 3);
         
         return new Response(
           JSON.stringify({
