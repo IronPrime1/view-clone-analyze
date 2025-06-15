@@ -1,9 +1,10 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { ExternalLink, Trash2, Clipboard, Download, Edit3, Check, X, FileText, Calendar, User, ChevronDown } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { ExternalLink, Trash2, Clipboard, Download, Edit3, Check, X, FileText, Calendar, User, ChevronDown, ChevronUp } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '../integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
@@ -19,12 +20,12 @@ interface Script {
 }
 
 const Scripts: React.FC = () => {
-  
   const [scripts, setScripts] = useState<Script[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [editingScript, setEditingScript] = useState<string | null>(null);
   const [editContent, setEditContent] = useState<string>('');
   const [saveTimeout, setSaveTimeout] = useState<NodeJS.Timeout | null>(null);
+  const [expandedScripts, setExpandedScripts] = useState<Set<string>>(new Set());
   const navigate = useNavigate();
   
   useEffect(() => {
@@ -76,6 +77,18 @@ const Scripts: React.FC = () => {
     }
   };
 
+  const toggleScriptExpansion = (scriptId: string) => {
+    setExpandedScripts(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(scriptId)) {
+        newSet.delete(scriptId);
+      } else {
+        newSet.add(scriptId);
+      }
+      return newSet;
+    });
+  };
+
   const handleEditStart = (script: Script) => {
     setEditingScript(script.id);
     setEditContent(script.content);
@@ -123,14 +136,15 @@ const Scripts: React.FC = () => {
       .catch(() => toast.error("Failed to copy"));
   };
   
-  const handleDownloadScript = (content: string, videoId: string) => {
+  const handleDownloadScript = (content: string, videoId: string, videoTitle: string) => {
     if (!content) return;
     
     const blob = new Blob([content], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `script-${videoId}-${new Date().toISOString().split('T')[0]}.txt`;
+    const sanitizedTitle = videoTitle?.replace(/[^a-zA-Z0-9]/g, '_') || 'script';
+    a.download = `${sanitizedTitle}_${videoId}_${new Date().toISOString().split('T')[0]}.txt`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -245,132 +259,150 @@ const Scripts: React.FC = () => {
 
         {scripts.length > 0 ? (
           <div className="space-y-4">
-            {scripts.map(script => (
-              <Card key={script.id} className="border hover-lift">
-                <Accordion type="single" collapsible className="w-full">
-                  <AccordionItem value={script.id} className="border-none">
-                    <AccordionTrigger className="hover:no-underline p-6 pb-4">
-                      <div className="flex flex-col items-start text-left space-y-2 w-full mr-4">
-                        <h3 className="font-semibold text-base line-clamp-2">
-                          {script.video_title}
-                        </h3>
-                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                          <div className="flex items-center gap-1">
-                            <User className="h-3 w-3" />
-                            <span>{script.channel_title}</span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <Calendar className="h-3 w-3" />
-                            <span>{new Date(script.created_at).toLocaleDateString()}</span>
-                          </div>
-                        </div>
-                      </div>
-                    </AccordionTrigger>
-                    
-                    <AccordionContent className="px-6 pb-6">
-                      <div className="space-y-4">
-                        {/* Action Buttons */}
-                        <div className="flex flex-wrap gap-2 mb-4">
-                          {editingScript === script.id ? (
-                            <>
-                              <Button 
-                                size="sm"
-                                onClick={handleEditSave}
-                                className="text-green-600 hover:text-green-700"
-                                variant="outline"
-                              >
-                                <Check className="h-4 w-4 mr-1" />
-                                Save
-                              </Button>
-                              <Button 
-                                size="sm"
-                                onClick={handleEditCancel}
-                                variant="outline"
-                                className="text-gray-600 hover:text-gray-700"
-                              >
-                                <X className="h-4 w-4 mr-1" />
-                                Cancel
-                              </Button>
-                            </>
-                          ) : (
-                            <>
-                              <Button 
-                                size="sm"
-                                onClick={() => handleEditStart(script)}
-                                variant="outline"
-                              >
-                                <Edit3 className="h-4 w-4 mr-1" />
-                                Edit
-                              </Button>
-                              <Button 
-                                size="sm" 
-                                onClick={() => handleCopyScript(script.content)}
-                                variant="outline"
-                              >
-                                <Clipboard className="h-4 w-4 mr-1" />
-                                Copy
-                              </Button>
-                              <Button 
-                                size="sm"
-                                onClick={() => handleDownloadScript(script.content, script.video_id)}
-                                variant="outline"
-                              >
-                                <Download className="h-4 w-4 mr-1" />
-                                Download
-                              </Button>
-                              <Button 
-                                size="sm" 
-                                onClick={() => openYouTubeVideo(script.video_id)}
-                                variant="outline"
-                              >
-                                <ExternalLink className="h-4 w-4 mr-1" />
-                                View Video
-                              </Button>
-                              <Button 
-                                size="sm" 
-                                variant="outline"
-                                className="text-destructive hover:text-destructive/80" 
-                                onClick={() => handleDeleteScript(script.id)}
-                              >
-                                <Trash2 className="h-4 w-4 mr-1" />
-                                Delete
-                              </Button>
-                            </>
-                          )}
-                        </div>
-
-                        {/* Script Content */}
-                        <div className="border rounded-lg">
-                          {editingScript === script.id ? (
-                            <div className="p-4">
-                              <Textarea
-                                value={editContent}
-                                onChange={(e) => setEditContent(e.target.value)}
-                                className="min-h-[300px] border-0 focus:ring-0 bg-transparent resize-none font-mono text-sm"
-                                placeholder="Edit your script..."
-                              />
-                              <div className="mt-2 text-xs text-muted-foreground flex items-center gap-2">
-                                <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
-                                Auto-saving changes...
+            {scripts.map(script => {
+              const isExpanded = expandedScripts.has(script.id);
+              
+              return (
+                <Card key={script.id} className="border card-shadow card-shadow-hover">
+                  <Collapsible 
+                    open={isExpanded}
+                    onOpenChange={() => toggleScriptExpansion(script.id)}
+                  >
+                    <CollapsibleTrigger asChild>
+                      <CardHeader className="hover:bg-muted/50 transition-colors cursor-pointer">
+                        <div className="flex items-center justify-between">
+                          <div className="flex flex-col items-start text-left space-y-2 flex-1">
+                            <CardTitle className="text-base line-clamp-2 text-left">
+                              {script.video_title}
+                            </CardTitle>
+                            <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                              <div className="flex items-center gap-1">
+                                <User className="h-3 w-3" />
+                                <span>{script.channel_title}</span>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <Calendar className="h-3 w-3" />
+                                <span>{new Date(script.created_at).toLocaleDateString()}</span>
                               </div>
                             </div>
-                          ) : (
-                            <ScrollArea className="h-80 p-4">
-                              <pre className="whitespace-pre-wrap text-sm leading-relaxed font-mono">
-                                {script.content}
-                              </pre>
-                            </ScrollArea>
-                          )}
+                          </div>
+                          <div className="ml-4">
+                            {isExpanded ? (
+                              <ChevronUp className="h-4 w-4" />
+                            ) : (
+                              <ChevronDown className="h-4 w-4" />
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    </AccordionContent>
-                  </AccordionItem>
-                </Accordion>
-              </Card>
-            ))}
+                      </CardHeader>
+                    </CollapsibleTrigger>
+                    
+                    <CollapsibleContent>
+                      <CardContent className="pt-0">
+                        <div className="space-y-4">
+                          {/* Action Buttons */}
+                          <div className="flex flex-wrap gap-2 mb-4">
+                            {editingScript === script.id ? (
+                              <>
+                                <Button 
+                                  size="sm"
+                                  onClick={handleEditSave}
+                                  className="text-green-600 hover:text-green-700"
+                                  variant="outline"
+                                >
+                                  <Check className="h-4 w-4 mr-1" />
+                                  Save
+                                </Button>
+                                <Button 
+                                  size="sm"
+                                  onClick={handleEditCancel}
+                                  variant="outline"
+                                  className="text-gray-600 hover:text-gray-700"
+                                >
+                                  <X className="h-4 w-4 mr-1" />
+                                  Cancel
+                                </Button>
+                              </>
+                            ) : (
+                              <>
+                                <Button 
+                                  size="sm"
+                                  onClick={() => handleEditStart(script)}
+                                  variant="outline"
+                                >
+                                  <Edit3 className="h-4 w-4 mr-1" />
+                                  Edit
+                                </Button>
+                                <Button 
+                                  size="sm" 
+                                  onClick={() => handleCopyScript(script.content)}
+                                  variant="outline"
+                                >
+                                  <Clipboard className="h-4 w-4 mr-1" />
+                                  Copy
+                                </Button>
+                                <Button 
+                                  size="sm"
+                                  onClick={() => handleDownloadScript(script.content, script.video_id, script.video_title || 'script')}
+                                  variant="outline"
+                                >
+                                  <Download className="h-4 w-4 mr-1" />
+                                  Download
+                                </Button>
+                                <Button 
+                                  size="sm" 
+                                  onClick={() => openYouTubeVideo(script.video_id)}
+                                  variant="outline"
+                                >
+                                  <ExternalLink className="h-4 w-4 mr-1" />
+                                  View Video
+                                </Button>
+                                <Button 
+                                  size="sm" 
+                                  variant="outline"
+                                  className="text-destructive hover:text-destructive/80" 
+                                  onClick={() => handleDeleteScript(script.id)}
+                                >
+                                  <Trash2 className="h-4 w-4 mr-1" />
+                                  Delete
+                                </Button>
+                              </>
+                            )}
+                          </div>
+
+                          {/* Script Content */}
+                          <div className="border rounded-lg card-shadow">
+                            {editingScript === script.id ? (
+                              <div className="p-4">
+                                <Textarea
+                                  value={editContent}
+                                  onChange={(e) => setEditContent(e.target.value)}
+                                  className="min-h-[300px] border-0 focus:ring-0 bg-transparent resize-none font-mono text-sm"
+                                  placeholder="Edit your script..."
+                                />
+                                <div className="mt-2 text-xs text-muted-foreground flex items-center gap-2">
+                                  <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+                                  Auto-saving changes...
+                                </div>
+                              </div>
+                            ) : (
+                              <ScrollArea className="h-80 p-4">
+                                <pre className="whitespace-pre-wrap text-sm leading-relaxed font-mono">
+                                  {script.content}
+                                </pre>
+                              </ScrollArea>
+                            )}
+                          </div>
+                        </div>
+                      </CardContent>
+                    </CollapsibleContent>
+                  </Collapsible>
+                </Card>
+              );
+            })}
           </div>
         ) : (
-          <Card className="text-center py-16">
+          <Card className="text-center py-16 card-shadow">
             <CardContent>
               <div className="max-w-md mx-auto space-y-4">
                 <div className="w-16 h-16 mx-auto rounded-full bg-muted flex items-center justify-center">
