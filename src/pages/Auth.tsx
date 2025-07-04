@@ -78,6 +78,7 @@ const Auth = () => {
           
           toast.success("YouTube channel connected successfully");
           // Use replace to avoid back-button issues
+          localStorage.setItem('youtube_connected', 'true');
           navigate('/dashboard', { replace: true });
           
         } catch (error: any) {
@@ -112,6 +113,7 @@ const Auth = () => {
         toast.success("Logged in successfully");
 
         // Redirect to the dashboard
+        
         navigate('/dashboard', { replace: true });
         
       } else {
