@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -78,12 +77,25 @@ const Auth = () => {
           
           toast.success("YouTube channel connected successfully");
           // Use replace to avoid back-button issues
-          navigate('/', { replace: true });
+          // navigate('/dashboard', { replace: true });
+          localStorage.setItem('youtube_connected', 'true');
+          window.location.replace('/dashboard');
           
         } catch (error: any) {
           console.error("YouTube auth error:", error);
           toast.error(error.message || "Failed to connect YouTube channel");
-          navigate('/', { replace: true });
+          navigate('/dashboard          // ...existing code...
+                    if (!data.success) {
+                      throw new Error(data.error || "Failed to connect YouTube channel");
+                    }
+                    
+                    toast.success("YouTube channel connected successfully");
+                    // Use replace to avoid back-button issues
+                    // navigate('/dashboard', { replace: true });
+                    localStorage.setItem('youtube_connected', 'true');
+                    window.location.replace('/dashboard');
+                    
+          // ...existing code...', { replace: true });
         } finally {
           setProcessingOAuth(false);
         }

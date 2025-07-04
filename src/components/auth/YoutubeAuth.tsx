@@ -15,7 +15,7 @@ const YoutubeAuth: React.FC = () => {
       // Make sure we have a clean URL before the redirect
       window.history.replaceState({}, document.title, window.location.pathname);
       await login();
-      // The login function now redirects to Google OAuth
+      navigate('/dashboard'); 
     } catch (error) {
       console.error("Failed to start YouTube auth:", error);
     }
