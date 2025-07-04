@@ -58,7 +58,7 @@ const Landing: React.FC = () => {
       </div>
 
       {/* Hero Section */}
-      <section className="relative z-10 container mx-auto px-6 mt-8 md:mt-24 mb-20 sm:pb-2 pt-24">
+      <section className="relative z-10 container mx-auto px-6 mt-8 md:mt-16 mb-20 sm:mb-4 pt-24">
         <div className="max-w-4xl mx-auto text-center">
           <div className="animate-fade-in">
             <div className="inline-flex items-center gap-2 px-4 py-2 mb-6 rounded-full bg-white/10 backdrop-blur-sm border border-white/20">
@@ -161,7 +161,7 @@ const Landing: React.FC = () => {
       </section>
 
       {/* Stats Section */}
-      <section className="relative z-10 container mx-auto px-4 pt-12">
+      <section className="relative z-10 container mx-auto px-4 pt-12 sm:pt-24">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
           {[
             { value: "10M+", label: "Scripts Generated", delay: "0s" },
@@ -182,7 +182,7 @@ const Landing: React.FC = () => {
       </section>
 
       {/* Testimonial Section */}
-      <section className="relative z-10 container mx-auto px-6 pt-12">
+      <section className="relative z-10 container mx-auto px-6 pt-12 sm:pt-24">
         <div className="max-w-4xl mx-auto">
           <div className="relative bg-gradient-to-r from-white/10 to-white/5 rounded-3xl p-8 md:p-12 backdrop-blur-sm border border-white/20 shadow-2xl">
             <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 to-blue-500/10 rounded-3xl"></div>
@@ -206,7 +206,7 @@ const Landing: React.FC = () => {
       </section>
 
       {/* CTA Section */}
-      <section className="relative z-10 container mx-auto px-4 pt-10">
+      <section className="relative z-10 container mx-auto px-4 pt-12 sm:pt-24 sm:pb-4">
         <div className="max-w-3xl mx-auto text-center">
           <h2 className="text-4xl md:text-5xl font-bold mb-6 bg-gradient-to-r from-white to-white/90 bg-clip-text text-transparent">
             Ready to 10x Your YouTube Growth?

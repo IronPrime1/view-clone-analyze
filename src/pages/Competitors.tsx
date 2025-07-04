@@ -72,14 +72,11 @@ const Competitors: React.FC = () => {
                 <Label htmlFor="channel-url">Channel URL, Handle, or ID</Label>
                 <Input
                   id="channel-url"
-                  placeholder="https://youtube.com/@channelname, @channelname, or channel ID"
+                  placeholder="https://youtube.com/@channelname"
                   value={channelInput}
                   onChange={(e) => setChannelInput(e.target.value)}
                   className="mt-2"
                 />
-                <p className="text-sm text-muted-foreground mt-1">
-                  You can paste a YouTube channel URL, enter a handle (like @channelname), or provide the channel ID directly
-                </p>
               </div>
               <DialogFooter className="gap-3 mt-0 pt-0">
                 <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>

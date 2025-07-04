@@ -179,7 +179,7 @@ const Auth = () => {
   
   // If already authenticated, redirect to dashboard
   if (session) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/dashboard" replace />;
   }
   
   return (
