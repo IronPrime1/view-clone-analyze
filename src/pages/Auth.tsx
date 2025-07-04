@@ -8,6 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Youtube, Mail, Lock, Loader2 } from 'lucide-react';
+import { useYoutube } from '@/contexts/YoutubeContext';
 
 const Auth = () => {
   const [email, setEmail] = useState('');
@@ -19,6 +20,8 @@ const Auth = () => {
   
   const location = useLocation();
   const navigate = useNavigate();
+
+  const { refreshData } = useYoutube();
   
   useEffect(() => {
     const checkSession = async () => {
@@ -79,6 +82,7 @@ const Auth = () => {
           toast.success("YouTube channel connected successfully");
           // Use replace to avoid back-button issues
           localStorage.setItem('youtube_connected', 'true');
+          await refreshData();
           navigate('/dashboard', { replace: true });
           
         } catch (error: any) {
