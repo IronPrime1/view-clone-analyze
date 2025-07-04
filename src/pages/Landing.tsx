@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -54,12 +53,12 @@ const Landing: React.FC = () => {
       </div>
 
       {/* Header */}
-      <div className="relative z-10">
+      <div className="relative z-50">
         <Nav/>
       </div>
 
       {/* Hero Section */}
-      <section className="relative z-10 container mx-auto px-4 mt-32 pt-6 md:mt-24 mb-20 sm:pb-2 pb-2">
+      <section className="relative z-10 container mx-auto px-6 mt-8 md:mt-24 mb-20 sm:pb-2 pt-24">
         <div className="max-w-4xl mx-auto text-center">
           <div className="animate-fade-in">
             <div className="inline-flex items-center gap-2 px-4 py-2 mb-6 rounded-full bg-white/10 backdrop-blur-sm border border-white/20">
@@ -87,14 +86,14 @@ const Landing: React.FC = () => {
           <div className="flex flex-col sm:flex-row gap-4 justify-center animate-fade-in" style={{animationDelay: '0.6s'}}>
             <Button 
               onClick={handleAction}
-              className="group bg-gradient-to-r from-purple-600 to-blue-500 hover:from-purple-700 hover:to-blue-600 text-lg px-8 py-3 h-auto rounded-xl shadow-2xl hover:shadow-purple-500/25 transition-all duration-300 hover:scale-105"
+              className="group bg-gradient-to-r text-white from-purple-600 to-blue-500 hover:from-purple-700 hover:to-blue-600 text-lg px-8 py-3 h-auto rounded-xl shadow-2xl hover:shadow-purple-500/25 transition-all duration-300 hover:scale-105"
             >
               {isAuthenticated ? "Go to Dashboard" : "Start Creating"} 
               <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
             </Button>
             <Button 
               variant="outline" 
-              className="group text-white hover:bg-white/10 text-lg px-8 py-3 h-auto rounded-xl border border-white/20 backdrop-blur-sm hover:border-white/40 transition-all duration-300"
+              className="group text-white bg-black text-lg px-8 py-3 h-auto rounded-xl border border-white/20 backdrop-blur-sm hover:border-white/40 transition-all duration-300"
               onClick={() => window.scrollTo({ top: document.getElementById('features')?.offsetTop, behavior: 'smooth' })}
             >
               <Play className="mr-2 h-5 w-5 group-hover:scale-110 transition-transform" /> 
@@ -105,12 +104,12 @@ const Landing: React.FC = () => {
       </section>
 
       {/* Features Section */}
-      <section id="features" className="relative z-10 container mx-auto px-8 pb-16 pt-32">
+      <section id="features" className="relative z-10 container mx-auto px-6 sm:pt-32">
         <div className="text-center mb-16">
           <h2 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-white to-white/80 bg-clip-text text-transparent">
             Powerful Features
           </h2>
-          <p className="text-white/70 text-xl max-w-2xl mx-auto">
+          <p className="text-white/70 text-xl max-w-4xl mx-auto">
             Everything you need to dominate YouTube with data-driven content creation
           </p>
         </div>
@@ -162,7 +161,7 @@ const Landing: React.FC = () => {
       </section>
 
       {/* Stats Section */}
-      <section className="relative z-10 container mx-auto px-4 py-20">
+      <section className="relative z-10 container mx-auto px-4 pt-12">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
           {[
             { value: "10M+", label: "Scripts Generated", delay: "0s" },
@@ -183,7 +182,7 @@ const Landing: React.FC = () => {
       </section>
 
       {/* Testimonial Section */}
-      <section className="relative z-10 container mx-auto px-4 py-16">
+      <section className="relative z-10 container mx-auto px-6 pt-12">
         <div className="max-w-4xl mx-auto">
           <div className="relative bg-gradient-to-r from-white/10 to-white/5 rounded-3xl p-8 md:p-12 backdrop-blur-sm border border-white/20 shadow-2xl">
             <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 to-blue-500/10 rounded-3xl"></div>
@@ -207,7 +206,7 @@ const Landing: React.FC = () => {
       </section>
 
       {/* CTA Section */}
-      <section className="relative z-10 container mx-auto px-4 py-20">
+      <section className="relative z-10 container mx-auto px-4 pt-10">
         <div className="max-w-3xl mx-auto text-center">
           <h2 className="text-4xl md:text-5xl font-bold mb-6 bg-gradient-to-r from-white to-white/90 bg-clip-text text-transparent">
             Ready to 10x Your YouTube Growth?
@@ -227,7 +226,7 @@ const Landing: React.FC = () => {
       </section>
 
       {/* Footer */}
-      <footer className="relative z-10 container mx-auto px-4 py-8 border-t border-white/10 mt-12">
+      <footer className="relative z-10 container mx-auto px-4 py-4 border-t border-white/10 mt-10">
         <div className="flex flex-col md:flex-row justify-between items-center">
           <div className="flex items-center space-x-2 mb-4 md:mb-0">
             <img src="/Logo1.png" alt="ScriptX Logo" className="h-8 w-8" />
