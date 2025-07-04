@@ -1,133 +1,145 @@
-
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { supabase } from '@/integrations/supabase/client';
-import { Navigate, useNavigate, useLocation } from 'react-router-dom';
-import { toast } from 'sonner';
-import { Youtube, Mail, Lock, Loader2 } from 'lucide-react';
-import { useYoutube } from '@/contexts/YoutubeContext';
+import React, { useState, useEffect } from "react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { supabase } from "@/integrations/supabase/client";
+import { Navigate, useNavigate, useLocation } from "react-router-dom";
+import { toast } from "sonner";
+import { Youtube, Mail, Lock, Loader2 } from "lucide-react";
+import { useYoutube } from "@/contexts/YoutubeContext";
 
 const Auth = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [isLogin, setIsLogin] = useState(true);
   const [loading, setLoading] = useState(false);
   const [session, setSession] = useState<any>(null);
   const [processingOAuth, setProcessingOAuth] = useState(false);
-  
+
   const location = useLocation();
   const navigate = useNavigate();
 
   const { refreshData } = useYoutube();
-  
+
   useEffect(() => {
     const checkSession = async () => {
       const { data } = await supabase.auth.getSession();
       setSession(data.session);
     };
-    
+
     checkSession();
-    
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
       setSession(session);
     });
-    
+
     return () => subscription.unsubscribe();
   }, []);
-  
+
   // Handle YouTube OAuth callback
   useEffect(() => {
     const processYoutubeAuth = async () => {
       // Check if we have a code in the URL (OAuth callback)
       const params = new URLSearchParams(location.search);
-      const code = params.get('code');
-      
+      const code = params.get("code");
+
       // Check if we're expecting a YouTube auth callback
-      const pendingYoutubeAuth = localStorage.getItem('pendingYoutubeAuth');
-      
-      if (code && pendingYoutubeAuth === 'true') {
+      const pendingYoutubeAuth = localStorage.getItem("pendingYoutubeAuth");
+
+      if (code && pendingYoutubeAuth === "true") {
         setProcessingOAuth(true);
         try {
           // Get the current user's auth token
           const { data: sessionData } = await supabase.auth.getSession();
-          
+
           if (!sessionData.session) {
-            throw new Error("You must be logged in to connect your YouTube channel");
+            throw new Error(
+              "You must be logged in to connect your YouTube channel"
+            );
           }
-          
+
           // Clear the pending auth flag
-          localStorage.removeItem('pendingYoutubeAuth');
-          
+          localStorage.removeItem("pendingYoutubeAuth");
+
           // Remove any query parameters from the URL to prevent "page not found" issues
           // This modification helps clean up the URL before processing the auth
-          window.history.replaceState({}, document.title, '/auth');
-          
+          window.history.replaceState({}, document.title, "/auth");
+
           // Call our edge function to exchange the code for tokens
-          const { data, error } = await supabase.functions.invoke('youtube-auth', {
-            body: {
-              code,
-              redirectUri: `${window.location.origin}/auth`
+          const { data, error } = await supabase.functions.invoke(
+            "youtube-auth",
+            {
+              body: {
+                code,
+                redirectUri: `${window.location.origin}/auth`,
+              },
             }
-          });
-          
+          );
+
           if (error) throw new Error(error.message);
-          
+
           if (!data.success) {
             throw new Error(data.error || "Failed to connect YouTube channel");
           }
-          
+
           toast.success("YouTube channel connected successfully");
           // Use replace to avoid back-button issues
-          localStorage.setItem('youtube_connected', 'true');
-          await refreshData();
-          navigate('/dashboard', { replace: true });
+          localStorage.setItem("youtube_connected", "true");
           
+          window.location.replace("/dashboard");
+
         } catch (error: any) {
           console.error("YouTube auth error:", error);
           toast.error(error.message || "Failed to connect YouTube channel");
-          navigate('/dashboard', { replace: true });
+          navigate("/dashboard", { replace: true });
         } finally {
           setProcessingOAuth(false);
         }
       }
     };
-    
+
     processYoutubeAuth();
   }, [location, navigate]);
-  
+
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    
+
     try {
       // Clean up auth state first
       cleanupAuthState();
-      
+
       if (isLogin) {
         const { data, error } = await supabase.auth.signInWithPassword({
           email,
-          password
+          password,
         });
-        
+
         if (error) throw error;
-        
+
         toast.success("Logged in successfully");
 
         // Redirect to the dashboard
-        
-        navigate('/dashboard', { replace: true });
-        
+
+        navigate("/dashboard", { replace: true });
       } else {
         const { data, error } = await supabase.auth.signUp({
           email,
-          password
+          password,
         });
-        
+
         if (error) throw error;
-        
+
         if (data.user?.identities?.length === 0) {
           toast.error("Account already exists. Please login instead.");
         } else {
@@ -142,25 +154,25 @@ const Auth = () => {
       setLoading(false);
     }
   };
-  
+
   // Clean up auth state to prevent limbo states
   const cleanupAuthState = () => {
     // Remove standard auth tokens
-    localStorage.removeItem('supabase.auth.token');
+    localStorage.removeItem("supabase.auth.token");
     // Remove all Supabase auth keys from localStorage
     Object.keys(localStorage).forEach((key) => {
-      if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
+      if (key.startsWith("supabase.auth.") || key.includes("sb-")) {
         localStorage.removeItem(key);
       }
     });
     // Remove from sessionStorage if in use
     Object.keys(sessionStorage || {}).forEach((key) => {
-      if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
+      if (key.startsWith("supabase.auth.") || key.includes("sb-")) {
         sessionStorage.removeItem(key);
       }
     });
   };
-  
+
   // If processing OAuth, show loading screen
   if (processingOAuth) {
     return (
@@ -182,31 +194,37 @@ const Auth = () => {
       </div>
     );
   }
-  
+
   // If already authenticated, redirect to dashboard
   if (session) {
     return <Navigate to="/dashboard" replace />;
   }
-  
+
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-b from-background to-secondary/20">
       <div className="max-w-md w-full">
         <div className="mb-8 text-center">
           <div className="flex items-center justify-center gap-3">
-            <img src="/Logo1.png" alt="ScriptX Logo" className="h-12 w-12 rounded-xl" />
+            <img
+              src="/Logo1.png"
+              alt="ScriptX Logo"
+              className="h-12 w-12 rounded-xl"
+            />
             <h1 className="text-3xl font-bold">ScriptX</h1>
           </div>
           <p className="text-muted-foreground mt-2">
             Clone Viral Youtube Content!
           </p>
         </div>
-        
+
         <Card>
           <CardHeader>
-            <CardTitle className='text-center'>{isLogin ? "Login" : "Create Account"}</CardTitle>
-            <CardDescription className='text-center'>
-              {isLogin 
-                ? "Enter your credentials to access your account" 
+            <CardTitle className="text-center">
+              {isLogin ? "Login" : "Create Account"}
+            </CardTitle>
+            <CardDescription className="text-center">
+              {isLogin
+                ? "Enter your credentials to access your account"
                 : "Sign up to start cloning viral YouTube content"}
             </CardDescription>
           </CardHeader>
@@ -227,7 +245,7 @@ const Auth = () => {
                   />
                 </div>
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="password">Password</Label>
                 <div className="relative">
@@ -249,29 +267,29 @@ const Auth = () => {
               </div>
             </CardContent>
             <CardFooter className="flex flex-col space-y-2">
-              <Button 
-                type="submit" 
-                className="w-full" 
-                disabled={loading}
-              >
+              <Button type="submit" className="w-full" disabled={loading}>
                 {loading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     {isLogin ? "Logging in..." : "Creating account..."}
                   </>
+                ) : isLogin ? (
+                  "Login"
                 ) : (
-                  isLogin ? "Login" : "Create Account"
+                  "Create Account"
                 )}
               </Button>
-              
-              <Button 
-                type="button" 
-                variant="link" 
+
+              <Button
+                type="button"
+                variant="link"
                 className="text-sm"
                 onClick={() => setIsLogin(!isLogin)}
                 disabled={loading}
               >
-                {isLogin ? "Need an account? Sign up" : "Already have an account? Login"}
+                {isLogin
+                  ? "Need an account? Sign up"
+                  : "Already have an account? Login"}
               </Button>
             </CardFooter>
           </form>
