@@ -186,22 +186,22 @@ const Auth = () => {
     <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-b from-background to-secondary/20">
       <div className="max-w-md w-full">
         <div className="mb-8 text-center">
-          <div className="flex items-center justify-center">
-            <Youtube className="h-8 w-8 text-youtube-red mr-2" />
-            <h1 className="text-2xl font-bold">YT Analyzer</h1>
+          <div className="flex items-center justify-center gap-3">
+            <img src="/Logo1.png" alt="ScriptX Logo" className="h-12 w-12 rounded-xl" />
+            <h1 className="text-3xl font-bold">ScriptX</h1>
           </div>
           <p className="text-muted-foreground mt-2">
-            Analyze your YouTube channel performance against competitors
+            Clone Viral Youtube Content!
           </p>
         </div>
         
         <Card>
           <CardHeader>
-            <CardTitle>{isLogin ? "Login" : "Create Account"}</CardTitle>
-            <CardDescription>
+            <CardTitle className='text-center'>{isLogin ? "Login" : "Create Account"}</CardTitle>
+            <CardDescription className='text-center'>
               {isLogin 
                 ? "Enter your credentials to access your account" 
-                : "Sign up to start analyzing your YouTube performance"}
+                : "Sign up to start cloning viral YouTube content"}
             </CardDescription>
           </CardHeader>
           <form onSubmit={handleAuth}>
